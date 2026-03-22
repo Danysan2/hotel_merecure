@@ -153,3 +153,33 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; color: #C9A96E; }
+
+/* ══════════════════════════════
+   RESPONSIVE — ≤768px
+══════════════════════════════ */
+@media (max-width: 768px) {
+  .chart-card {
+    padding: 1.1rem 0.85rem;
+    border-radius: 12px;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .chart-title { font-size: 1rem; }
+
+  .chart-filters {
+    width: 100%;
+  }
+
+  .filter-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.5rem;
+  }
+}

@@ -170,20 +170,72 @@
   .rooms-content {
     grid-template-columns: 1fr;
     gap: var(--space-2xl);
+    text-align: center;
+  }
+
+  .rooms-actions {
+    display: flex;
+    justify-content: center;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
+  .rooms-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    text-align: center;
+  }
+
+  .rooms-actions {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Evitar que el carrusel se desborde */
+  .room-carousel {
+    gap: var(--space-xs);
+    overflow: hidden;
+  }
+
+  .carousel-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
   .room-image-wrapper {
-    height: 300px;
+    height: 260px;
   }
-  
+
   .room-details {
-    padding: var(--space-lg);
+    padding: var(--space-md);
   }
-  
+
+  /* Header de la tarjeta: apilar precio debajo del nombre */
+  .room-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    text-align: center;
+  }
+
+  .room-title {
+    font-size: 1.4rem;
+  }
+
+  .room-price {
+    font-size: 1.2rem;
+  }
+
+  .room-desc {
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
   .room-amenities {
     flex-wrap: wrap;
-    gap: var(--space-md);
+    gap: var(--space-sm);
+    justify-content: center;
   }
 }

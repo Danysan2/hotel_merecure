@@ -14,40 +14,67 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="container navbar-container">
-        <div className="navbar-logo">
-          <span className="logo-text">HOTEL</span>
-          <span className="logo-subtext">MERECURE</span>
-        </div>
+    <>
+      {isMobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+      <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+        <div className="container navbar-container">
 
-        <div className={`navbar-links ${isMobileMenuOpen ? 'active' : ''}`}>
-          <a href="#home" onClick={() => setIsMobileMenuOpen(false)}>Inicio</a>
-          <a href="#about" onClick={() => setIsMobileMenuOpen(false)}>Nosotros</a>
-          <a href="#services" onClick={() => setIsMobileMenuOpen(false)}>Servicios</a>
-          <a href="#facility" onClick={() => setIsMobileMenuOpen(false)}>Instalaciones</a>
-          <a href="#contact" onClick={() => setIsMobileMenuOpen(false)}>Contacto</a>
-        </div>
+          {/* Logo */}
+          <div className="navbar-logo">
+            <span className="logo-text">HOTEL</span>
+            <span className="logo-subtext">MERECURE</span>
+          </div>
 
-        <div className="navbar-cta-group">
-          <a href="/reservar" className="btn btn-gold desktop-cta">Reservar ahora</a>
-          <a href="/admin" className="btn btn-login desktop-cta">
-            <span className="material-icons">person</span>
-            Login
-          </a>
-        </div>
+          {/* Desktop links */}
+          <div className={`navbar-links ${isMobileMenuOpen ? 'active' : ''}`}>
+            <a href="#home" onClick={() => setIsMobileMenuOpen(false)}>Inicio</a>
+            <a href="#about" onClick={() => setIsMobileMenuOpen(false)}>Nosotros</a>
+            <a href="#services" onClick={() => setIsMobileMenuOpen(false)}>Servicios</a>
+            <a href="#facility" onClick={() => setIsMobileMenuOpen(false)}>Instalaciones</a>
+            <a href="#contact" onClick={() => setIsMobileMenuOpen(false)}>Contacto</a>
 
-        <button
-          className="mobile-menu-toggle"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          <span className="material-icons">
-            {isMobileMenuOpen ? 'close' : 'menu'}
-          </span>
-        </button>
-      </div>
-    </nav>
+            {/* Inside slide-in menu on mobile */}
+            <div className="mobile-menu-ctas">
+              <a href="/reservar" className="btn btn-gold" onClick={() => setIsMobileMenuOpen(false)}>
+                Reservar ahora
+              </a>
+              <a href="/admin" className="btn btn-login-menu" onClick={() => setIsMobileMenuOpen(false)}>
+                <span className="material-icons">person</span>
+                Login admin
+              </a>
+            </div>
+          </div>
+
+          {/* Desktop CTA buttons */}
+          <div className="navbar-cta-group desktop-only">
+            <a href="/reservar" className="btn btn-gold">Reservar ahora</a>
+            <a href="/admin" className="btn btn-login">
+              <span className="material-icons">person</span>
+              Login
+            </a>
+          </div>
+
+          {/* Mobile right side: compact black pill + hamburger */}
+          <div className="mobile-right">
+            <a href="/reservar" className="mobile-reservar-btn">
+              Reservar
+            </a>
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className="material-icons">
+                {isMobileMenuOpen ? 'close' : 'menu'}
+              </span>
+            </button>
+          </div>
+
+        </div>
+      </nav>
+    </>
   );
 };
 

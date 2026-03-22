@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Bloquear rutas del admin
+Disallow: /admin
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://hotelmerecure.online/sitemap.xml

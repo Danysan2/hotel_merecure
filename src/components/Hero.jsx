@@ -22,8 +22,11 @@ const Hero = () => {
         <div className="hero-content">
           <span className="section-label animate-on-scroll">Bienvenido a Merecure</span>
           <h1 className="hero-title animate-on-scroll">
-            Descubre el Lujo Como Nunca <br /> Antes en Hotel Merecure
+            Viaja y descansa en el hotel Merecure
           </h1>
+          <p className="hero-subtitle animate-on-scroll">
+            Un hotel familiar en medio de los llanos para desconectarte, descansar y disfrutar de la tranquilidad de Cravo Norte.
+          </p>
         </div>
       </div>
 

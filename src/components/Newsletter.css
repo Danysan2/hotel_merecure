@@ -68,7 +68,7 @@
   height: 100%;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .newsletter-container {
     grid-template-columns: 1fr;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
@@ -76,9 +76,20 @@
 
   .location-left {
     padding: var(--space-2xl) var(--space-lg);
+    text-align: center;
+    align-items: center;
+  }
+
+  .location-address {
+    justify-content: center;
+  }
+
+  .location-desc {
+    max-width: 100%;
+    text-align: center;
   }
 
   .map-wrapper {
-    min-height: 300px;
+    min-height: 280px;
   }
 }

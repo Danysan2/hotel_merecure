@@ -25,7 +25,6 @@ const getDateRange = (filter) => {
     const end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
     return { start: today.toISOString(), end: end.toISOString() }
   }
-  // todo — sin límite de fin
   return { start: today.toISOString(), end: null }
 }
 
@@ -42,6 +41,7 @@ const AdminDashboard = () => {
   const [editRoom, setEditRoom]       = useState(null)
   const [loading, setLoading]         = useState(true)
   const [deletingId, setDeletingId]   = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const loadRooms = useCallback(async () => {
     setLoading(true)
@@ -73,7 +73,6 @@ const AdminDashboard = () => {
     if (end) query = query.lte('check_in', end.split('T')[0])
 
     const { data } = await query.order('check_in', { ascending: true })
-
     setReservations(data || [])
     setLoading(false)
   }, [])
@@ -100,25 +99,31 @@ const AdminDashboard = () => {
     filter === 'hoy' ? loadRooms() : loadReservations(filter)
   }
 
+  const navTo = (v) => { setView(v); if (v === 'rooms') setFilter('hoy'); setSidebarOpen(false) }
+
   const occupied  = rooms.filter(r => r.is_occupied).length
   const available = rooms.filter(r => !r.is_occupied).length
 
   return (
     <div className="admin-layout">
+
+      {/* Overlay móvil */}
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-brand">
           <span className="sb-logo">HOTEL</span>
           <span className="sb-sub">MERECURE</span>
         </div>
         <nav className="sidebar-nav">
-          <button className={`sidebar-link ${view === 'home' ? 'active' : ''}`} onClick={() => setView('home')}>
+          <button className={`sidebar-link ${view === 'home' ? 'active' : ''}`} onClick={() => navTo('home')}>
             <span className="material-icons">dashboard</span>Dashboard
           </button>
-          <button className={`sidebar-link ${view === 'rooms' ? 'active' : ''}`} onClick={() => { setView('rooms'); setFilter('hoy') }}>
+          <button className={`sidebar-link ${view === 'rooms' ? 'active' : ''}`} onClick={() => navTo('rooms')}>
             <span className="material-icons">meeting_room</span>Habitaciones
           </button>
-          <button className="sidebar-link" onClick={() => setShowNew(true)}>
+          <button className="sidebar-link" onClick={() => { setShowNew(true); setSidebarOpen(false) }}>
             <span className="material-icons">add_circle</span>Nueva Reserva
           </button>
         </nav>
@@ -136,19 +141,48 @@ const AdminDashboard = () => {
 
       {/* Main */}
       <main className="admin-main">
+
+        {/* Top bar móvil */}
+        <div className="mobile-topbar">
+          <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
+            <span className="material-icons">menu</span>
+          </button>
+          <span className="mobile-topbar-title">
+            {view === 'home' ? 'Dashboard' : 'Habitaciones'}
+          </span>
+          <button className="mobile-new-btn" onClick={() => setShowNew(true)}>
+            <span className="material-icons">add</span>
+          </button>
+        </div>
+
         {view === 'home' && (
           <DashboardHome rooms={rooms} occupied={occupied} available={available} onNewReservation={() => setShowNew(true)} />
         )}
 
         {view === 'rooms' && (
           <>
+            {/* Filtros visibles en móvil (el header desktop está oculto) */}
+            <div className="mobile-filters">
+              <p className="mobile-filters-sub">{occupied} ocupadas · {available} disponibles</p>
+              <div className="filter-tabs">
+                {['hoy', 'semana', 'mes', 'todo'].map(f => (
+                  <button
+                    key={f}
+                    className={`filter-tab ${filter === f ? 'active' : ''}`}
+                    onClick={() => setFilter(f)}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <header className="admin-header">
               <div>
                 <h1 className="admin-page-title">Habitaciones</h1>
                 <p className="admin-page-sub">{occupied} ocupadas · {available} disponibles</p>
               </div>
               <div className="rooms-header-right">
-                {/* Filtro */}
                 <div className="filter-tabs">
                   {['hoy', 'semana', 'mes', 'todo'].map(f => (
                     <button
@@ -160,7 +194,7 @@ const AdminDashboard = () => {
                     </button>
                   ))}
                 </div>
-                <button className="btn-new-res" onClick={() => setShowNew(true)}>
+                <button className="btn-new-res desktop-only-btn" onClick={() => setShowNew(true)}>
                   <span className="material-icons">add</span>Nueva Reserva
                 </button>
               </div>
@@ -171,7 +205,6 @@ const AdminDashboard = () => {
                 <span className="material-icons spinning">autorenew</span>Cargando...
               </div>
             ) : filter === 'hoy' ? (
-              /* ── VISTA CARDS (HOY) ── */
               <div className="rooms-grid">
                 {rooms.map((room) => (
                   <div key={room.id} className={`room-card-admin ${room.is_occupied ? 'occupied' : 'available'}`}>
@@ -234,16 +267,14 @@ const AdminDashboard = () => {
                 ))}
               </div>
             ) : (
-              /* ── VISTA LISTA (SEMANA / MES) ── */
               <div className="res-list">
                 {reservations.length === 0 ? (
                   <div className="res-list-empty">
                     <span className="material-icons">event_busy</span>
                     <p>No hay reservas agendadas para {
-                    filter === 'semana' ? 'esta semana' :
-                    filter === 'mes'    ? 'este mes' :
-                    'el futuro'
-                  }</p>
+                      filter === 'semana' ? 'esta semana' :
+                      filter === 'mes'    ? 'este mes' : 'el futuro'
+                    }</p>
                   </div>
                 ) : reservations.map(r => (
                   <div key={r.id} className="res-list-item">

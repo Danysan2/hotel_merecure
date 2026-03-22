@@ -60,7 +60,28 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
+  .why-choose {
+    padding-top: var(--space-2xl);
+  }
+
+  .why-choose-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+    text-align: center;
+  }
+
+  .feature-icon {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
   .features-grid {
     grid-template-columns: 1fr;
   }

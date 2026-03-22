@@ -271,6 +271,43 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(0);
 }
 
+/* ===== RESPONSIVE BASE ===== */
+@media (max-width: 900px) {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  .container {
+    padding: 0 var(--space-sm);
+  }
+
+  .section {
+    padding: var(--space-2xl) 0;
+  }
+
+  /* Centrado global de textos en móvil */
+  .section-label {
+    display: block;
+    text-align: center;
+    padding-left: 0;
+  }
+
+  .section-label::before {
+    display: none;
+  }
+
+  .section-title {
+    font-size: clamp(1.6rem, 7vw, 2.2rem);
+    text-align: center;
+  }
+
+  .section-subtitle {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
   width: 8px;

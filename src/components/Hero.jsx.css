@@ -1,12 +1,12 @@
 .hero {
   position: relative;
   height: 100vh;
-  min-height: 800px;
+  min-height: 700px;
   width: 100%;
   display: flex;
   align-items: center;
   background-color: var(--color-forest);
-  overflow: visible;
+  overflow: hidden;
 }
 
 .hero-background {
@@ -31,18 +31,19 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(to right,
-      rgba(26, 60, 52, 0.8) 0%,
-      rgba(26, 60, 52, 0.4) 50%,
-      transparent 100%);
+      rgba(26, 60, 52, 0.82) 0%,
+      rgba(26, 60, 52, 0.5) 55%,
+      rgba(26, 60, 52, 0.25) 100%);
 }
 
 .hero-container {
   position: relative;
   z-index: 10;
+  width: 100%;
 }
 
 .hero-content {
-  max-width: 800px;
+  max-width: 700px;
   margin-bottom: 10rem;
 }
 
@@ -50,30 +51,85 @@
   color: var(--color-white);
   font-size: clamp(2.5rem, 6vw, 4.5rem);
   margin-bottom: var(--space-md);
-  animation-delay: 0.2s;
 }
 
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  max-width: 480px;
+  margin-top: var(--space-sm);
+}
 
 .hero-booking {
   position: absolute;
-  bottom: 8rem;
+  bottom: 6rem;
   left: 0;
   right: 0;
   z-index: 20;
 }
 
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem;
+/* ══════════════════════════════
+   MOBILE
+══════════════════════════════ */
+@media (max-width: 900px) {
+  .hero {
+    height: 100dvh;
+    min-height: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    overflow: hidden;
   }
 
+  /* Overlay uniforme en móvil, sin gradiente */
   .hero-overlay {
-    background: rgba(26, 60, 52, 0.6);
+    background: rgba(15, 35, 28, 0.72);
   }
 
+  /* Texto centrado, con espacio para el navbar */
+  .hero-container {
+    padding-top: 12rem;
+    padding-bottom: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .hero-content {
+    max-width: 100%;
+    margin-bottom: 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-content .section-label {
+    display: none;
+  }
+
+  .hero-title {
+    font-size: clamp(1.9rem, 7.5vw, 2.6rem);
+    max-width: 340px;
+    margin-top: 5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.88rem;
+    max-width: 300px;
+    text-align: center;
+    margin-top: 2.5rem;
+  }
+
+  /* Barra de búsqueda: debajo del texto, full width */
   .hero-booking {
-    transform: none;
     position: relative;
     bottom: auto;
+    left: auto;
+    right: auto;
+    z-index: 20;
+    padding: var(--space-xl) var(--space-sm) var(--space-lg);
+    flex-shrink: 0;
   }
 }
