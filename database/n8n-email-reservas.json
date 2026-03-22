@@ -1,0 +1,104 @@
+{
+  "name": "Hotel Merecure - Email Reservas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hotel-reserva",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Webhook Supabase",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "hotel-reserva"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://n8n-supabase.dtbfmw.easypanel.host/rest/v1/guests?id=eq.{{ $json.body.record.guest_id }}&select=first_name,last_name,email,phone,document_number",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Obtener Huésped",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://n8n-supabase.dtbfmw.easypanel.host/rest/v1/room_status?id=eq.{{ $('Webhook Supabase').item.json.body.record.room_id }}&select=room_number,floor,room_type",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Obtener Habitación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "CORREO_DEL_HOTEL@gmail.com",
+        "subject": "=🏨 Nueva reserva - Hab. #{{ $('Obtener Habitación').item.json[0].room_number }} | {{ $('Obtener Huésped').item.json[0].first_name }} {{ $('Obtener Huésped').item.json[0].last_name }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f0eb; margin: 0; padding: 0; }\n    .wrapper { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }\n    .header { background: #1A3C34; padding: 32px 40px; text-align: center; }\n    .header h1 { color: #C9A96E; font-family: Georgia, serif; font-size: 28px; margin: 0; letter-spacing: 3px; }\n    .header p { color: rgba(255,255,255,0.7); font-size: 13px; margin: 6px 0 0; letter-spacing: 2px; }\n    .badge { display: inline-block; background: #C9A96E; color: #1A3C34; font-weight: 700; font-size: 11px; letter-spacing: 1px; padding: 4px 14px; border-radius: 20px; margin-top: 16px; }\n    .body { padding: 36px 40px; }\n    .section-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #C9A96E; text-transform: uppercase; margin-bottom: 12px; }\n    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }\n    .info-block { background: #f9f6f2; border-radius: 10px; padding: 14px 18px; }\n    .info-block .label { font-size: 10px; color: #999; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }\n    .info-block .value { font-size: 15px; color: #1A3C34; font-weight: 600; }\n    .divider { border: none; border-top: 1px solid #f0ebe3; margin: 24px 0; }\n    .dates-row { display: flex; gap: 16px; margin-bottom: 28px; }\n    .date-card { flex: 1; background: #1A3C34; border-radius: 10px; padding: 16px 20px; color: white; text-align: center; }\n    .date-card .d-label { font-size: 10px; letter-spacing: 1px; opacity: 0.7; text-transform: uppercase; margin-bottom: 6px; }\n    .date-card .d-value { font-size: 16px; font-weight: 700; }\n    .source-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }\n    .source-web { background: #e8f4fd; color: #2980b9; }\n    .source-presencial { background: #eafaf1; color: #27ae60; }\n    .footer { background: #f9f6f2; padding: 24px 40px; text-align: center; }\n    .footer p { color: #999; font-size: 12px; margin: 0; }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"header\">\n      <h1>HOTEL MERECURE</h1>\n      <p>CRAVO NORTE · ARAUCA</p>\n      <div class=\"badge\">⭐ NUEVA RESERVA</div>\n    </div>\n    <div class=\"body\">\n      <p class=\"section-title\">Información del huésped</p>\n      <div class=\"info-grid\">\n        <div class=\"info-block\"><div class=\"label\">Nombre</div><div class=\"value\">{{ $('Obtener Huésped').item.json[0].first_name }} {{ $('Obtener Huésped').item.json[0].last_name }}</div></div>\n        <div class=\"info-block\"><div class=\"label\">Documento</div><div class=\"value\">{{ $('Obtener Huésped').item.json[0].document_number }}</div></div>\n        <div class=\"info-block\"><div class=\"label\">Teléfono</div><div class=\"value\">{{ $('Obtener Huésped').item.json[0].phone || 'No registrado' }}</div></div>\n        <div class=\"info-block\"><div class=\"label\">Correo</div><div class=\"value\">{{ $('Obtener Huésped').item.json[0].email || 'No registrado' }}</div></div>\n      </div>\n      <hr class=\"divider\">\n      <p class=\"section-title\">Detalle de la reserva</p>\n      <div class=\"info-grid\">\n        <div class=\"info-block\"><div class=\"label\">Habitación</div><div class=\"value\">#{{ $('Obtener Habitación').item.json[0].room_number }} · Piso {{ $('Obtener Habitación').item.json[0].floor }}</div></div>\n        <div class=\"info-block\"><div class=\"label\">Tipo</div><div class=\"value\">{{ $('Obtener Habitación').item.json[0].room_type }}</div></div>\n        <div class=\"info-block\"><div class=\"label\">Personas</div><div class=\"value\">{{ $('Webhook Supabase').item.json.body.record.num_guests }} persona(s)</div></div>\n        <div class=\"info-block\"><div class=\"label\">Canal</div><div class=\"value\"><span class=\"source-badge source-{{ $('Webhook Supabase').item.json.body.record.source }}\">{{ $('Webhook Supabase').item.json.body.record.source === 'web' ? '🌐 Web' : '🏨 Presencial' }}</span></div></div>\n      </div>\n      <div class=\"dates-row\">\n        <div class=\"date-card\"><div class=\"d-label\">Check-in</div><div class=\"d-value\">{{ $('Webhook Supabase').item.json.body.record.check_in }}</div></div>\n        <div class=\"date-card\"><div class=\"d-label\">Check-out</div><div class=\"d-value\">{{ $('Webhook Supabase').item.json.body.record.check_out }}</div></div>\n      </div>\n      {{ $('Webhook Supabase').item.json.body.record.notes ? '<div class=\"info-block\"><div class=\"label\">Notas</div><div class=\"value\">' + $('Webhook Supabase').item.json.body.record.notes + '</div></div>' : '' }}\n    </div>\n    <div class=\"footer\">\n      <p>Hotel Merecure · Calle 2 #2-32, Cravo Norte, Arauca</p>\n      <p style=\"margin-top:6px\">Este correo fue generado automáticamente</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Enviar Email Hotel",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [960, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REEMPLAZAR_CON_ID_CREDENCIAL_GMAIL",
+          "name": "Gmail Hotel Merecure"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Supabase": {
+      "main": [[{ "node": "Obtener Huésped", "type": "main", "index": 0 }]]
+    },
+    "Obtener Huésped": {
+      "main": [[{ "node": "Obtener Habitación", "type": "main", "index": 0 }]]
+    },
+    "Obtener Habitación": {
+      "main": [[{ "node": "Enviar Email Hotel", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "meta": { "templateCredsSetupCompleted": false },
+  "pinData": {}
+}
