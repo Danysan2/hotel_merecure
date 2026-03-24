@@ -4,14 +4,14 @@ import './Rooms.css';
 const slides = [
   {
     img: '/hotel_vista_habitacion_doble.jpeg',
-    tag: 'DOBLE VENTILADOR',
-    title: 'Habitación Doble',
-    price: 'Desde $40.000',
-    desc: 'Cama doble con ventilador. Ideal para una persona o pareja que busca comodidad a buen precio.',
+    tag: 'DOBLE A/C',
+    title: 'Habitación Doble aire acondicionado',
+    price: 'Desde $80.000',
+    desc: 'Cama doble con aire acondicionado. Perfecta para descansar del calor llanero.',
     amenities: [
       { icon: 'bed', label: 'Cama Doble' },
+      { icon: 'ac_unit', label: 'Aire Acondicionado' },
       { icon: 'wifi', label: 'Wi-Fi Gratis' },
-      { icon: 'shower', label: 'Baño Privado' },
     ],
   },
   {
@@ -29,9 +29,9 @@ const slides = [
   {
     img: '/hotel_vista_habitacion_familar.jpeg',
     tag: 'TRIPLE',
-    title: 'Habitación Triple',
+    title: 'Cama doble + 2 sencillas',
     price: 'Desde $70.000',
-    desc: 'Habitación con 3 camas, ideal para grupos de trabajo o amigos. Disponible con ventilador o A/C.',
+    desc: 'Habitación con cama doble y dos camas sencillas, ideal para grupos de trabajo o amigos.',
     amenities: [
       { icon: 'king_bed', label: '3 Camas' },
       { icon: 'wifi', label: 'Wi-Fi Gratis' },
@@ -46,7 +46,7 @@ const slides = [
     desc: 'Cama doble y dos camarotes con aire acondicionado. Perfecta para familias o grupos grandes.',
     amenities: [
       { icon: 'king_bed', label: '5 Camas' },
-      { icon: 'ac_unit', label: 'Aire Acondicionado' },
+      { icon: 'air', label: 'Ventilador' },
       { icon: 'wifi', label: 'Wi-Fi Gratis' },
     ],
   },
@@ -71,9 +71,6 @@ const Rooms = () => {
               22 habitaciones distribuidas en 2 pisos, con ventilador o aire acondicionado.
               Desde habitaciones dobles hasta familiares con capacidad para 5 personas.
             </p>
-            <div className="rooms-actions animate-on-scroll">
-              <button className="btn btn-primary">Ver Todas las Habitaciones</button>
-            </div>
           </div>
 
           <div className="rooms-featured animate-on-scroll">

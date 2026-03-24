@@ -28,12 +28,16 @@ const BookingBar = () => {
 
   // Cargar tipos de habitación desde Supabase
   useEffect(() => {
+    let mounted = true;
     supabase
       .from('room_types')
       .select('id, name, max_occupancy')
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) { console.error('[BookingBar] room_types:', error.message); return; }
         if (data) setRoomTypes(data);
       });
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {

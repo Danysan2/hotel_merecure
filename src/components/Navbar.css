@@ -5,7 +5,10 @@
   left: 0;
   width: 100%;
   z-index: 1000;
-  padding: var(--space-lg) 0;
+  padding: 0;
+  height: 72px;
+  display: flex;
+  align-items: center;
   transition: all var(--transition-normal);
 }
 
@@ -13,8 +16,7 @@
   background-color: rgba(250, 247, 242, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  padding: var(--space-sm) 0;
-  box-shadow: 0 1px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 24px rgba(0, 0, 0, 0.08);
   border-bottom: 1px solid rgba(26, 60, 52, 0.06);
 }
 
@@ -29,10 +31,27 @@
 /* ── Logo ── */
 .navbar-logo {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  gap: 0.6rem;
   line-height: 1;
   flex-shrink: 0;
+}
+
+.navbar-logo-img {
+  height: 86px;
+  width: auto;
+  object-fit: contain;
+  /* Desborda fuera de la barra sin agrandarla */
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.18));
+}
+
+.navbar-logo-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .logo-text {
@@ -65,7 +84,7 @@
   justify-content: center;
 }
 
-.navbar-links > a {
+.navbar-links>a {
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 500;
@@ -77,7 +96,7 @@
   white-space: nowrap;
 }
 
-.navbar-links > a::after {
+.navbar-links>a::after {
   content: '';
   position: absolute;
   bottom: -4px;
@@ -88,19 +107,19 @@
   transition: width var(--transition-normal);
 }
 
-.navbar-links > a:hover {
+.navbar-links>a:hover {
   color: var(--color-gold);
 }
 
-.navbar-links > a:hover::after {
+.navbar-links>a:hover::after {
   width: 100%;
 }
 
-.navbar.scrolled .navbar-links > a {
+.navbar.scrolled .navbar-links>a {
   color: var(--color-charcoal);
 }
 
-.navbar.scrolled .navbar-links > a:hover {
+.navbar.scrolled .navbar-links>a:hover {
   color: var(--color-forest);
 }
 
@@ -212,6 +231,14 @@
 ══════════════════════════════ */
 @media (max-width: 900px) {
 
+  .navbar {
+    height: 60px;
+  }
+
+  .navbar-logo-img {
+    height: 62px;
+  }
+
   /* Navbar never turns cream on mobile — stays dark/transparent */
   .navbar.scrolled {
     background-color: rgba(15, 35, 28, 0.95);
@@ -297,7 +324,7 @@
     right: 0;
   }
 
-  .navbar-links > a {
+  .navbar-links>a {
     color: var(--color-charcoal);
     font-size: 1rem;
     letter-spacing: 1px;
@@ -307,11 +334,11 @@
     display: block;
   }
 
-  .navbar-links > a::after {
+  .navbar-links>a::after {
     display: none;
   }
 
-  .navbar-links > a:hover {
+  .navbar-links>a:hover {
     color: var(--color-forest);
   }
 

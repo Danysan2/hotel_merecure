@@ -95,6 +95,9 @@ const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) =
         guestId = newGuest.id
       }
 
+      // 1b. Verificar que el statusId se haya cargado
+      if (!statusId) throw new Error('No se encontró el estado "confirmada". Recarga el modal e intenta de nuevo.')
+
       // 2. Verificar disponibilidad
       const { data: avail } = await supabase.rpc('is_room_available', {
         p_room_id:   Number(res.room_id),

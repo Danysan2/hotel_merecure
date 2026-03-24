@@ -45,7 +45,7 @@ const DashboardHome = ({ rooms, occupied, available, onNewReservation }) => {
 
         const [activeStatusRes, activeReservationsRes, allReservationsRes] = await Promise.all([
           supabase.from('reservation_statuses').select('id, name'),
-          supabase.from('reservations').select('num_guests, status_id').lte('check_in', today).gt('check_out', today),
+          supabase.from('reservations').select('num_guests, status_id').lte('check_in', today).gte('check_out', today),
           supabase.from('reservations').select('num_guests, status_id, created_at, total_price, check_in').gte('created_at', sixMoAgo.toISOString()),
         ])
 

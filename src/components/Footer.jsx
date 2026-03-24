@@ -3,7 +3,7 @@ import './Footer.css';
 
 const Footer = () => {
   return (
-    <footer className="footer">
+    <footer id="contact" className="footer">
       <div className="container footer-container">
         <div className="footer-top">
           <div className="footer-brand">
@@ -15,7 +15,7 @@ const Footer = () => {
               Tu lugar para descansar en Cravo Norte. Atención cercana, comodidad y tranquilidad en el corazón de los llanos.
             </p>
           </div>
-          
+
           <div className="footer-links-grid">
             <div className="footer-group">
               <h4>Enlaces Rápidos</h4>
@@ -23,11 +23,10 @@ const Footer = () => {
                 <li><a href="#home">Inicio</a></li>
                 <li><a href="#about">Nosotros</a></li>
                 <li><a href="#rooms">Habitaciones</a></li>
-                <li><a href="#blog">Blog</a></li>
                 <li><a href="#contact">Contacto</a></li>
               </ul>
             </div>
-            
+
             <div className="footer-group">
               <h4>Servicios</h4>
               <ul>
@@ -38,7 +37,7 @@ const Footer = () => {
                 <li><a href="#">Lavandería</a></li>
               </ul>
             </div>
-            
+
             <div className="footer-group">
               <h4>Contacto</h4>
               <ul className="contact-list">
@@ -58,7 +57,7 @@ const Footer = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="footer-bottom">
           <p>© 2026 Hotel Merecure. Todos los derechos reservados.</p>
           <div className="footer-legal">

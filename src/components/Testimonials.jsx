@@ -4,21 +4,21 @@ import './Testimonials.css';
 const Testimonials = () => {
   const reviews = [
     {
-      name: 'Sophia K.',
-      role: 'Huésped Frecuente',
-      text: 'Desde el momento en que llegamos, todo fue impecable. El servicio al cliente fue excelente y las ofertas exclusivas hicieron nuestra estadía aún mejor.',
-      rating: 5
-    },
-    {
-      name: 'James B.',
+      name: 'Iván González',
       role: 'Viajero de Negocios',
-      text: 'Este hotel redefine el confort y el lujo. La atención al detalle, las amenidades de primer nivel y el personal amable hicieron nuestro viaje inolvidable.',
+      text: 'Me hospedé por trabajo y la verdad superó mis expectativas. El personal muy amable, siempre dispuesto a ayudar. El hotel es tranquilo y las habitaciones muy limpias. Volvería sin dudarlo.',
       rating: 5
     },
     {
-      name: 'Ahmed H.',
-      role: 'Vacaciones en Familia',
-      text: '¡Una experiencia cinco estrellas! Los tratamientos de spa fueron maravillosos, la comida deliciosa y el ambiente pura felicidad. ¡Altamente recomendado!',
+      name: 'Juan Cepeda',
+      role: 'Huésped',
+      text: 'Lo que más me gustó fue el restaurante en la noche, una sorpresa muy agradable. La comida estuvo deliciosa y el ambiente muy acogedor. La hospitalidad del equipo se nota desde que uno llega.',
+      rating: 5
+    },
+    {
+      name: 'Jenny Flórez',
+      role: 'Visita Familiar',
+      text: 'Vinimos en familia y todos quedamos muy contentos. El hotel es limpio, tranquilo y la gente muy cálida. Se nota que le ponen mucho cariño a la atención. Lo recomiendo a quien visite Cravo Norte.',
       rating: 5
     }
   ];

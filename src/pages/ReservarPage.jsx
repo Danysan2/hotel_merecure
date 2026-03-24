@@ -1,10 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { es } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
 import { supabase } from '../lib/supabase';
 import './ReservarPage.css';
+
+// ── Validación de campos ─────────────────────────────────────
+const validate = ({ firstName, lastName, docNumber, phone, email }) => {
+  if (firstName.trim().length < 2)  return 'El nombre debe tener al menos 2 caracteres.';
+  if (lastName.trim().length < 2)   return 'El apellido debe tener al menos 2 caracteres.';
+  if (!/^\d{5,15}$/.test(docNumber.trim())) return 'El número de documento debe tener entre 5 y 15 dígitos.';
+  const phoneClean = phone.replace(/[\s\-]/g, '');
+  if (!/^3\d{9}$/.test(phoneClean)) return 'El celular debe ser un número colombiano válido (ej: 3001234567).';
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'El correo no tiene un formato válido.';
+  return null;
+};
 
 const toISO  = (d) => d ? (typeof d === 'string' ? d : d.toISOString().split('T')[0]) : '';
 const fromISO = (s) => s ? new Date(s + 'T00:00:00') : undefined;
@@ -16,10 +27,14 @@ export default function ReservarPage() {
 
   const [roomTypes, setRoomTypes] = useState([]);
   const [docTypes,  setDocTypes]  = useState([]);
-  const [loading,   setLoading]   = useState(false);
-  const [showCal,   setShowCal]   = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [loading,     setLoading]     = useState(false);
+  const [showCal,     setShowCal]     = useState(false);
+  const [showModal,   setShowModal]   = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [loadError,   setLoadError]   = useState('');
+  // Idempotency: clave única por sesión del formulario, evita doble envío
+  const idempotencyKey = useRef(crypto.randomUUID());
+  const submittingRef  = useRef(false);
 
   // Datos de estadia
   const [roomTypeId,   setRoomTypeId]   = useState(state?.roomTypeId   ? String(state.roomTypeId) : '');
@@ -39,8 +54,22 @@ export default function ReservarPage() {
   const [email,     setEmail]     = useState('');
 
   useEffect(() => {
-    supabase.from('room_types').select('id, name, price_single, price_double, price_fixed, max_occupancy').then(({ data }) => setRoomTypes(data || []));
-    supabase.from('document_types').select('id, code, name').then(({ data }) => setDocTypes(data || []));
+    const loadData = async () => {
+      try {
+        const [rtRes, dtRes] = await Promise.all([
+          supabase.from('room_types').select('id, name, price_single, price_double, price_fixed, max_occupancy'),
+          supabase.from('document_types').select('id, code, name'),
+        ]);
+        if (rtRes.error) throw new Error('No se pudieron cargar los tipos de habitación.');
+        if (dtRes.error) throw new Error('No se pudieron cargar los tipos de documento.');
+        setRoomTypes(rtRes.data || []);
+        setDocTypes(dtRes.data || []);
+      } catch (err) {
+        console.error('[ReservarPage] Error al cargar datos:', err);
+        setLoadError('Error al cargar el formulario. Recarga la página o contáctanos al +57 317 698 0346.');
+      }
+    };
+    loadData();
   }, []);
 
   const handleRoomType = (id) => {
@@ -64,6 +93,14 @@ export default function ReservarPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Guard: evita doble envío aunque el botón no esté deshabilitado aún
+    if (submittingRef.current) return;
+
+    // Validación de campos
+    const validationError = validate({ firstName, lastName, docNumber, phone, email });
+    if (validationError) { setSubmitError(validationError); return; }
+
+    submittingRef.current = true;
     setSubmitError('');
     setLoading(true);
 
@@ -72,19 +109,26 @@ export default function ReservarPage() {
       const checkOut = toISO(range.to);
 
       const { error: insertError } = await supabase.from('booking_requests').insert({
-        room_type_id:  roomTypeId ? Number(roomTypeId) : null,
-        check_in:      checkIn  || null,
-        check_out:     checkOut || null,
-        num_guests:    guests,
-        contact_name:  `${firstName} ${lastName}`.trim() || null,
-        contact_phone: phone  || null,
-        contact_email: email  || null,
-        whatsapp_sent: false,
+        room_type_id:      roomTypeId ? Number(roomTypeId) : null,
+        check_in:          checkIn  || null,
+        check_out:         checkOut || null,
+        num_guests:        guests,
+        contact_name:      `${firstName.trim()} ${lastName.trim()}`.trim() || null,
+        contact_phone:     phone.replace(/[\s\-]/g, '') || null,
+        contact_email:     email.trim() || null,
+        whatsapp_sent:     false,
+        idempotency_key:   idempotencyKey.current,
       });
 
       if (insertError) {
+        // Unique constraint = envío duplicado capturado por la BD
+        if (insertError.code === '23505') {
+          setShowModal(true);
+          return;
+        }
         console.error('[ReservarPage] Error al guardar solicitud:', insertError);
         setSubmitError('No pudimos registrar tu solicitud. Por favor intenta de nuevo o contáctanos directamente al +57 317 698 0346.');
+        submittingRef.current = false;
         return;
       }
 
@@ -92,6 +136,7 @@ export default function ReservarPage() {
     } catch (err) {
       console.error('[ReservarPage] Error inesperado:', err);
       setSubmitError('Sin conexión. Verifica tu red e intenta de nuevo.');
+      submittingRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -112,6 +157,12 @@ export default function ReservarPage() {
       </div>
 
       <div className="reservar-body">
+        {loadError && (
+          <div className="reservar-error" style={{ margin: '1.5rem auto', maxWidth: '600px' }}>
+            <span className="material-icons">cloud_off</span>
+            <span>{loadError}</span>
+          </div>
+        )}
         <form className="reservar-form" onSubmit={handleSubmit}>
 
           {/* ── Sección 1: Estadia ── */}

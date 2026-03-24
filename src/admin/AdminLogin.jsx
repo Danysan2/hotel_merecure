@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { saveSession } from './auth'
 import './AdminLogin.css'
 
 const AdminLogin = () => {
@@ -8,7 +9,9 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  const sessionExpired = location.state?.expired === true
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -33,7 +36,7 @@ const AdminLogin = () => {
         return
       }
 
-      sessionStorage.setItem('admin_user', JSON.stringify(data[0]))
+      saveSession(data[0])
       navigate('/admin/dashboard')
     } catch (err) {
       // Error de red o fallo inesperado
@@ -53,6 +56,13 @@ const AdminLogin = () => {
         </div>
         <h2 className="login-title">Panel de Administración</h2>
         <p className="login-subtitle">Ingresa tus credenciales para continuar</p>
+
+        {sessionExpired && (
+          <div className="login-expired">
+            <span className="material-icons">timer_off</span>
+            Tu sesión expiró. Por favor inicia sesión de nuevo.
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="login-form">
           <div className="login-field">

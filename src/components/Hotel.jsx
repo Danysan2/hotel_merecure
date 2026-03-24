@@ -25,7 +25,7 @@ const Hotel = () => {
       <div className="container">
         <div className="section-header align-center">
           <span className="section-label animate-on-scroll">El Hotel</span>
-          <h2 className="section-title animate-on-scroll">Instalaciones y Servicios Premium</h2>
+          <h2 className="section-title animate-on-scroll">Instalaciones y Servicios</h2>
         </div>
 
         <div className="facilities-grid">

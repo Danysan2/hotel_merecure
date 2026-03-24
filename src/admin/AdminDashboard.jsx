@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { getSession, clearSession } from './auth'
 import NewReservationModal from './NewReservationModal.jsx'
 import EditReservationModal from './EditReservationModal.jsx'
 import DashboardHome from './DashboardHome.jsx'
@@ -30,7 +31,7 @@ const getDateRange = (filter) => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate()
-  const user     = JSON.parse(sessionStorage.getItem('admin_user') || '{}')
+  const user     = getSession() || {}
 
   const [view, setView]               = useState('home')
   const [filter, setFilter]           = useState('hoy')
@@ -42,74 +43,111 @@ const AdminDashboard = () => {
   const [loading, setLoading]         = useState(true)
   const [deletingId, setDeletingId]   = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [page, setPage]               = useState(0)
+  const [hasMore, setHasMore]         = useState(false)
+  const [toast, setToast]             = useState(null)   // { msg, type: 'error'|'success' }
+  const [confirmDialog, setConfirmDialog] = useState(null) // { reservationId, label }
+  const PAGE_SIZE = 25
+
+  const showToast = (msg, type = 'error') => {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const loadRooms = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase.from('room_status').select('*')
-    setRooms(data || [])
-    setLoading(false)
+    try {
+      const { data, error } = await supabase.from('room_status').select('*')
+      if (error) throw new Error(error.message)
+      setRooms(data || [])
+    } catch (err) {
+      console.error('[AdminDashboard] loadRooms:', err)
+      showToast('Error al cargar las habitaciones. Intenta recargar.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
-  const loadReservations = useCallback(async (f) => {
+  const loadReservations = useCallback(async (f, p = 0) => {
     setLoading(true)
-    const { start, end } = getDateRange(f)
-    const { data: statuses } = await supabase
-      .from('reservation_statuses')
-      .select('id')
-      .in('name', ['confirmada', 'activa'])
-    const ids = (statuses || []).map(s => s.id)
+    try {
+      const { start, end } = getDateRange(f)
+      const { data: statuses, error: stErr } = await supabase
+        .from('reservation_statuses')
+        .select('id')
+        .in('name', ['confirmada', 'activa'])
+      if (stErr) throw new Error(stErr.message)
+      const ids = (statuses || []).map(s => s.id)
 
-    let query = supabase
-      .from('reservations')
-      .select(`
-        id, check_in, check_out, num_guests, source, notes,
-        guests(first_name, last_name, phone, email),
-        rooms(room_number, floor, room_types(name)),
-        reservation_statuses(name)
-      `)
-      .in('status_id', ids)
-      .gte('check_out', start.split('T')[0])
+      let query = supabase
+        .from('reservations')
+        .select(`
+          id, check_in, check_out, num_guests, source, notes,
+          guests(first_name, last_name, phone, email),
+          rooms(room_number, floor, room_types(name)),
+          reservation_statuses(name)
+        `)
+        .in('status_id', ids)
+        .gte('check_out', start.split('T')[0])
 
-    if (end) query = query.lte('check_in', end.split('T')[0])
+      if (end) query = query.lte('check_in', end.split('T')[0])
 
-    const { data } = await query.order('check_in', { ascending: true })
-    setReservations(data || [])
-    setLoading(false)
-  }, [])
+      const from = p * PAGE_SIZE
+      const { data, error: qErr } = await query
+        .order('check_in', { ascending: true })
+        .range(from, from + PAGE_SIZE)
+
+      if (qErr) throw new Error(qErr.message)
+
+      const rows = data || []
+      const moreExist = rows.length === PAGE_SIZE + 1
+      // Un solo setState: recortamos el +1 explorador en el mismo update
+      const displayRows = moreExist ? rows.slice(0, -1) : rows
+      setReservations(prev => p === 0 ? displayRows : [...prev, ...displayRows])
+      setHasMore(moreExist)
+      setPage(p)
+    } catch (err) {
+      console.error('[AdminDashboard] loadReservations:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [PAGE_SIZE])
 
   useEffect(() => { loadRooms() }, [loadRooms])
 
   useEffect(() => {
     if (view === 'rooms' && filter === 'hoy') loadRooms()
-    else if (view === 'rooms') loadReservations(filter)
+    else if (view === 'rooms') { setPage(0); loadReservations(filter, 0) }
   }, [view, filter, loadRooms, loadReservations])
 
   const handleLogout = () => {
-    sessionStorage.removeItem('admin_user')
+    clearSession()
     navigate('/admin')
   }
 
-  const handleCancel = async (reservationId, label) => {
-    if (!window.confirm(`¿Cancelar la reserva de ${label}?`)) return
+  const handleCancel = async (reservationId) => {
+    setConfirmDialog(null)
     setDeletingId(reservationId)
     try {
       const { data: st, error: stErr } = await supabase
         .from('reservation_statuses').select('id').eq('name', 'cancelada').single()
       if (stErr || !st) {
-        alert('Error: no se encontró el estado "cancelada" en reservation_statuses. Verifica que exista ese registro.')
-        setDeletingId(null)
+        showToast('No se encontró el estado "cancelada". Contacta al administrador.')
         return
       }
       const { error: upErr } = await supabase
         .from('reservations').update({ status_id: st.id }).eq('id', reservationId)
       if (upErr) {
-        alert(`Error al cancelar: ${upErr.message}`)
+        showToast(`Error al cancelar: ${upErr.message}`)
+      } else {
+        showToast('Reserva cancelada correctamente.', 'success')
       }
     } catch (e) {
-      alert(`Error inesperado: ${e.message}`)
+      showToast(`Error inesperado: ${e.message}`)
+    } finally {
+      setDeletingId(null)
+      filter === 'hoy' ? loadRooms() : loadReservations(filter)
     }
-    setDeletingId(null)
-    filter === 'hoy' ? loadRooms() : loadReservations(filter)
   }
 
   const navTo = (v) => { setView(v); if (v === 'rooms') setFilter('hoy'); setSidebarOpen(false) }
@@ -235,7 +273,7 @@ const AdminDashboard = () => {
                             <button
                               className="rca-action-btn delete" title="Cancelar reserva"
                               disabled={deletingId === room.reservation_id}
-                              onClick={() => handleCancel(room.reservation_id, `hab. #${room.room_number}`)}
+                              onClick={() => setConfirmDialog({ reservationId: room.reservation_id, label: `hab. #${room.room_number}` })}
                             >
                               <span className="material-icons">
                                 {deletingId === room.reservation_id ? 'hourglass_empty' : 'cancel'}
@@ -336,7 +374,7 @@ const AdminDashboard = () => {
                       <button
                         className="rca-action-btn delete" title="Cancelar"
                         disabled={deletingId === r.id}
-                        onClick={() => handleCancel(r.id, `${r.guests?.first_name} ${r.guests?.last_name}`)}
+                        onClick={() => setConfirmDialog({ reservationId: r.id, label: `${r.guests?.first_name} ${r.guests?.last_name}` })}
                       >
                         <span className="material-icons">
                           {deletingId === r.id ? 'hourglass_empty' : 'cancel'}
@@ -345,6 +383,16 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 ))}
+                {hasMore && (
+                  <button
+                    className="load-more-btn"
+                    onClick={() => loadReservations(filter, page + 1)}
+                    disabled={loading}
+                  >
+                    <span className="material-icons">expand_more</span>
+                    Ver más reservas
+                  </button>
+                )}
               </div>
             )}
           </>
@@ -362,6 +410,33 @@ const AdminDashboard = () => {
       {editRoom && (
         <EditReservationModal room={editRoom} onClose={() => setEditRoom(null)}
           onSuccess={() => { setEditRoom(null); filter === 'hoy' ? loadRooms() : loadReservations(filter) }} />
+      )}
+
+      {/* ── Diálogo de confirmación ── */}
+      {confirmDialog && (
+        <div className="confirm-overlay" onClick={() => setConfirmDialog(null)}>
+          <div className="confirm-box" onClick={e => e.stopPropagation()}>
+            <span className="material-icons confirm-icon">warning</span>
+            <h3>¿Cancelar reserva?</h3>
+            <p>Se cancelará la reserva de <strong>{confirmDialog.label}</strong>. Esta acción no se puede deshacer.</p>
+            <div className="confirm-actions">
+              <button className="confirm-btn-sec" onClick={() => setConfirmDialog(null)}>No, volver</button>
+              <button className="confirm-btn-pri" onClick={() => handleCancel(confirmDialog.reservationId)}>
+                Sí, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div className={`admin-toast ${toast.type === 'success' ? 'toast-success' : 'toast-error'}`}>
+          <span className="material-icons">
+            {toast.type === 'success' ? 'check_circle' : 'error_outline'}
+          </span>
+          {toast.msg}
+        </div>
       )}
     </div>
   )

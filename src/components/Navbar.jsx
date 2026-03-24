@@ -23,16 +23,18 @@ const Navbar = () => {
 
           {/* Logo */}
           <div className="navbar-logo">
-            <span className="logo-text">HOTEL</span>
-            <span className="logo-subtext">MERECURE</span>
+            <img src="/logo_final.png" alt="Hotel Merecure" className="navbar-logo-img" />
+            <div className="navbar-logo-text">
+              <span className="logo-text">HOTEL</span>
+              <span className="logo-subtext">MERECURE</span>
+            </div>
           </div>
 
           {/* Desktop links */}
           <div className={`navbar-links ${isMobileMenuOpen ? 'active' : ''}`}>
             <a href="#home" onClick={() => setIsMobileMenuOpen(false)}>Inicio</a>
             <a href="#about" onClick={() => setIsMobileMenuOpen(false)}>Nosotros</a>
-            <a href="#services" onClick={() => setIsMobileMenuOpen(false)}>Servicios</a>
-            <a href="#facility" onClick={() => setIsMobileMenuOpen(false)}>Instalaciones</a>
+            <a href="#facility" onClick={() => setIsMobileMenuOpen(false)}>Servicios</a>
             <a href="#contact" onClick={() => setIsMobileMenuOpen(false)}>Contacto</a>
 
             {/* Inside slide-in menu on mobile */}

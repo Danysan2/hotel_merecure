@@ -110,6 +110,20 @@
   border: 1px solid #fecaca;
 }
 
+.login-expired {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+.login-expired .material-icons { font-size: 1.1rem; flex-shrink: 0; }
+
 .login-btn {
   background: #1A3C34;
   color: #fff;
