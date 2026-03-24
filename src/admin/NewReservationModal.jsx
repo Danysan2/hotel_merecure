@@ -15,13 +15,34 @@ const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) =
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
 
+  const [roomTypes, setRoomTypes] = useState([])
+
   useEffect(() => {
-    supabase.from('document_types').select('id, code, name').then(({ data }) => setDocTypes(data || []))
+    supabase.from('document_types').select('id, code, name')
+      .then(({ data, error }) => {
+        if (error) console.error('[Modal] document_types:', error.message)
+        else setDocTypes(data || [])
+      })
+
     if (!preselectedRoom) {
-      supabase.from('room_status').select('id, room_number, floor, room_type, is_occupied').then(({ data }) => setRooms(data || []))
+      supabase.from('room_status').select('id, room_number, floor, room_type, is_occupied')
+        .then(({ data, error }) => {
+          if (error) console.error('[Modal] room_status:', error.message)
+          else setRooms(data || [])
+        })
     }
+
     supabase.from('reservation_statuses').select('id, name').eq('name', 'confirmada').single()
-      .then(({ data }) => setStatusId(data?.id))
+      .then(({ data, error }) => {
+        if (error) console.error('[Modal] reservation_statuses:', error.message)
+        else setStatusId(data?.id)
+      })
+
+    supabase.from('room_types').select('id, name, price_single, price_double, price_fixed, max_occupancy')
+      .then(({ data, error }) => {
+        if (error) console.error('[Modal] room_types:', error.message)
+        else setRoomTypes(data || [])
+      })
   }, [])
 
   const handleGuestChange = (e) => setGuest((g) => ({ ...g, [e.target.name]: e.target.value }))
@@ -32,12 +53,22 @@ const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) =
     return true
   })
 
+  const getSelectedRoomType = () => {
+    const roomId = preselectedRoom ? preselectedRoom.id : res.room_id
+    const room = preselectedRoom || rooms.find((r) => String(r.id) === String(roomId))
+    if (!room) return null
+    return roomTypes.find((rt) => rt.name === room.room_type)
+  }
+
+  const maxGuests = getSelectedRoomType()?.max_occupancy || 10
+
   const calcPrice = () => {
-    if (!res.room_id || !res.check_in || !res.check_out) return 0
-    const room = rooms.find((r) => String(r.id) === String(res.room_id))
-    if (!room) return 0
+    if (!res.check_in || !res.check_out) return 0
+    const rt = getSelectedRoomType()
+    if (!rt) return 0
     const days = Math.max(1, (new Date(res.check_out) - new Date(res.check_in)) / 86400000)
-    return days * 0
+    const perNight = rt.price_fixed ? rt.price_fixed : (Number(res.num_guests) >= 2 ? rt.price_double : rt.price_single)
+    return days * (perNight || 0)
   }
 
   const handleSubmit = async () => {
@@ -81,7 +112,7 @@ const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) =
         check_in:    res.check_in,
         check_out:   res.check_out,
         num_guests:  Number(res.num_guests),
-        total_price: 0,
+        total_price: calcPrice(),
         source:      'presencial',
         notes:       res.notes || null,
       })
@@ -200,9 +231,12 @@ const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) =
                 </div>
               </div>
               <div className="form-field">
-                <label>Número de personas</label>
-                <input name="num_guests" type="number" min="1" max="10"
-                  value={res.num_guests} onChange={handleResChange} required />
+                <label>Número de personas (máx. {maxGuests})</label>
+                <input name="num_guests" type="number" min="1" max={maxGuests}
+                  value={res.num_guests} onChange={(e) => {
+                    const v = Math.min(Number(e.target.value), maxGuests)
+                    setRes((r) => ({ ...r, num_guests: v }))
+                  }} required />
               </div>
               <div className="form-field">
                 <label>Notas adicionales</label>
@@ -210,10 +244,19 @@ const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) =
                   placeholder="Observaciones, solicitudes especiales..." rows={3} />
               </div>
 
-              <div className="res-summary">
-                <span className="material-icons">info</span>
-                El precio total se registrará cuando se aplique el pago.
-              </div>
+              {calcPrice() > 0 && (
+                <div className="res-summary">
+                  <span className="material-icons">payments</span>
+                  <strong>Total: ${calcPrice().toLocaleString('es-CO')}</strong>
+                  {' '}({Math.max(1, (new Date(res.check_out) - new Date(res.check_in)) / 86400000)} noche{Math.max(1, (new Date(res.check_out) - new Date(res.check_in)) / 86400000) !== 1 ? 's' : ''})
+                </div>
+              )}
+              {!calcPrice() && (
+                <div className="res-summary">
+                  <span className="material-icons">info</span>
+                  Selecciona habitación, fechas y personas para ver el precio.
+                </div>
+              )}
             </div>
           )}
 

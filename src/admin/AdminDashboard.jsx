@@ -92,9 +92,22 @@ const AdminDashboard = () => {
   const handleCancel = async (reservationId, label) => {
     if (!window.confirm(`¿Cancelar la reserva de ${label}?`)) return
     setDeletingId(reservationId)
-    const { data: st } = await supabase
-      .from('reservation_statuses').select('id').eq('name', 'cancelada').single()
-    await supabase.from('reservations').update({ status_id: st.id }).eq('id', reservationId)
+    try {
+      const { data: st, error: stErr } = await supabase
+        .from('reservation_statuses').select('id').eq('name', 'cancelada').single()
+      if (stErr || !st) {
+        alert('Error: no se encontró el estado "cancelada" en reservation_statuses. Verifica que exista ese registro.')
+        setDeletingId(null)
+        return
+      }
+      const { error: upErr } = await supabase
+        .from('reservations').update({ status_id: st.id }).eq('id', reservationId)
+      if (upErr) {
+        alert(`Error al cancelar: ${upErr.message}`)
+      }
+    } catch (e) {
+      alert(`Error inesperado: ${e.message}`)
+    }
     setDeletingId(null)
     filter === 'hoy' ? loadRooms() : loadReservations(filter)
   }

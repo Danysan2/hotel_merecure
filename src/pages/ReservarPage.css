@@ -264,6 +264,21 @@
 .rs-row .material-icons { font-size: 1.1rem; color: #C9A96E; }
 
 /* ─── Submit button ──────────────────────────────────────── */
+.reservar-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  color: #c0392b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+.reservar-error .material-icons { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
 .reservar-submit {
   display: flex;
   align-items: center;

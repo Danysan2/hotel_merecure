@@ -15,20 +15,33 @@ const AdminLogin = () => {
     setError('')
     setLoading(true)
 
-    const { data, error: rpcError } = await supabase.rpc('login_staff', {
-      p_username: username,
-      p_password: password,
-    })
+    try {
+      const { data, error: rpcError } = await supabase.rpc('login_staff', {
+        p_username: username,
+        p_password: password,
+      })
 
-    setLoading(false)
+      if (rpcError) {
+        // Error del servidor (función SQL, conexión, etc.)
+        console.error('[AdminLogin] RPC error:', rpcError)
+        setError('Error al conectar con el servidor. Intenta de nuevo.')
+        return
+      }
 
-    if (rpcError || !data || data.length === 0) {
-      setError('Usuario o contraseña incorrectos.')
-      return
+      if (!data || data.length === 0) {
+        setError('Usuario o contraseña incorrectos.')
+        return
+      }
+
+      sessionStorage.setItem('admin_user', JSON.stringify(data[0]))
+      navigate('/admin/dashboard')
+    } catch (err) {
+      // Error de red o fallo inesperado
+      console.error('[AdminLogin] Error inesperado:', err)
+      setError('Sin conexión. Verifica tu red e intenta de nuevo.')
+    } finally {
+      setLoading(false)
     }
-
-    sessionStorage.setItem('admin_user', JSON.stringify(data[0]))
-    navigate('/admin/dashboard')
   }
 
   return (

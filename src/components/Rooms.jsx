@@ -4,49 +4,49 @@ import './Rooms.css';
 const slides = [
   {
     img: '/hotel_vista_habitacion_doble.jpeg',
-    tag: 'HABITACIÓN DOBLE',
+    tag: 'DOBLE VENTILADOR',
     title: 'Habitación Doble',
-    price: 'Consultar',
-    desc: 'Cómoda habitación doble con todo lo necesario para una estadía perfecta.',
+    price: 'Desde $40.000',
+    desc: 'Cama doble con ventilador. Ideal para una persona o pareja que busca comodidad a buen precio.',
     amenities: [
       { icon: 'bed', label: 'Cama Doble' },
-      { icon: 'square_foot', label: '35 m²' },
       { icon: 'wifi', label: 'Wi-Fi Gratis' },
+      { icon: 'shower', label: 'Baño Privado' },
     ],
   },
   {
     img: '/hotel_vista_habitacion_doble1.jpeg',
-    tag: 'HABITACIÓN DOBLE',
-    title: 'Habitación Doble Premium',
-    price: 'Consultar',
-    desc: 'Versión premium de nuestra habitación doble con acabados especiales.',
+    tag: 'DOBLE A/C',
+    title: 'Habitación Doble A/C',
+    price: 'Desde $60.000',
+    desc: 'Cama doble con aire acondicionado. La más popular del hotel, perfecta para descansar del calor llanero.',
     amenities: [
       { icon: 'bed', label: 'Cama Doble' },
-      { icon: 'square_foot', label: '40 m²' },
+      { icon: 'ac_unit', label: 'Aire Acondicionado' },
       { icon: 'wifi', label: 'Wi-Fi Gratis' },
     ],
   },
   {
     img: '/hotel_vista_habitacion_familar.jpeg',
-    tag: 'FAMILIAR',
-    title: 'Habitación Familiar',
-    price: 'Consultar',
-    desc: 'Espaciosa habitación diseñada para familias, con todo el confort que necesitan.',
+    tag: 'TRIPLE',
+    title: 'Habitación Triple',
+    price: 'Desde $70.000',
+    desc: 'Habitación con 3 camas, ideal para grupos de trabajo o amigos. Disponible con ventilador o A/C.',
     amenities: [
-      { icon: 'king_bed', label: 'Múltiples Camas' },
-      { icon: 'square_foot', label: '55 m²' },
+      { icon: 'king_bed', label: '3 Camas' },
       { icon: 'wifi', label: 'Wi-Fi Gratis' },
+      { icon: 'shower', label: 'Baño Privado' },
     ],
   },
   {
     img: '/hotel_vista_habitacion_familiar.jpeg',
     tag: 'FAMILIAR',
-    title: 'Habitación Familiar',
-    price: 'Consultar',
-    desc: 'Suite amplia para toda la familia con áreas separadas para mayor comodidad.',
+    title: 'Habitación Familiar (5 camas)',
+    price: '$150.000 / noche',
+    desc: 'Cama doble y dos camarotes con aire acondicionado. Perfecta para familias o grupos grandes.',
     amenities: [
-      { icon: 'king_bed', label: 'Múltiples Camas' },
-      { icon: 'square_foot', label: '65 m²' },
+      { icon: 'king_bed', label: '5 Camas' },
+      { icon: 'ac_unit', label: 'Aire Acondicionado' },
       { icon: 'wifi', label: 'Wi-Fi Gratis' },
     ],
   },
@@ -68,8 +68,8 @@ const Rooms = () => {
             <span className="section-label animate-on-scroll">Alojamiento</span>
             <h2 className="section-title animate-on-scroll">¡La mejor habitación solo para ti!</h2>
             <p className="section-subtitle animate-on-scroll">
-              Ingresa al lujo con una habitación diseñada para tu estilo y comodidad.
-              Desde interiores elegantes hasta amenidades de primer nivel, nuestros espacios están hechos para tu descanso.
+              22 habitaciones distribuidas en 2 pisos, con ventilador o aire acondicionado.
+              Desde habitaciones dobles hasta familiares con capacidad para 5 personas.
             </p>
             <div className="rooms-actions animate-on-scroll">
               <button className="btn btn-primary">Ver Todas las Habitaciones</button>

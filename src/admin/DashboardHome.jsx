@@ -27,93 +27,72 @@ const CustomTooltip = ({ active, payload, label, filter }) => {
 }
 
 const DashboardHome = ({ rooms, occupied, available, onNewReservation }) => {
-  const [stats, setStats]       = useState({ totalRes: 0, guests: 0, revenue: 0 })
+  const [stats, setStats]         = useState({ totalRes: 0, guests: 0, revenue: 0 })
   const [chartData, setChartData] = useState([])
-  const [filter, setFilter]     = useState('personas')
-  const [loading, setLoading]   = useState(true)
+  const [filter, setFilter]       = useState('personas')
+  const [loading, setLoading]     = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
+      setLoadError('')
 
-      const today      = new Date().toISOString().split('T')[0]
-      const sixMoAgo   = new Date(); sixMoAgo.setMonth(sixMoAgo.getMonth() - 5); sixMoAgo.setDate(1)
-      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0)
+      try {
+        const today        = new Date().toISOString().split('T')[0]
+        const sixMoAgo     = new Date(); sixMoAgo.setMonth(sixMoAgo.getMonth() - 5); sixMoAgo.setDate(1)
+        const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0)
 
-      // ── 5 queries en paralelo ──────────────────────────────
-      const [
-        activeStatusRes,
-        activeReservationsRes,
-        paymentsMonthRes,
-        allReservationsRes,
-        allPaymentsRes,
-      ] = await Promise.all([
-        // 1. IDs de estados activos
-        supabase.from('reservation_statuses').select('id').in('name', ['confirmada','activa']),
+        const [activeStatusRes, activeReservationsRes, allReservationsRes] = await Promise.all([
+          supabase.from('reservation_statuses').select('id, name'),
+          supabase.from('reservations').select('num_guests, status_id').lte('check_in', today).gt('check_out', today),
+          supabase.from('reservations').select('num_guests, status_id, created_at, total_price, check_in').gte('created_at', sixMoAgo.toISOString()),
+        ])
 
-        // 2. Reservas activas HOY (para personas alojadas)
-        supabase.from('reservations')
-          .select('num_guests, status_id')
-          .lte('check_in', today)
-          .gt('check_out', today),
+        if (activeStatusRes.error)      throw new Error('Error al cargar estados: '    + activeStatusRes.error.message)
+        if (activeReservationsRes.error) throw new Error('Error al cargar reservas: '  + activeReservationsRes.error.message)
+        if (allReservationsRes.error)   throw new Error('Error al cargar historial: '  + allReservationsRes.error.message)
 
-        // 3. Pagos del mes actual
-        supabase.from('payments').select('amount').gte('paid_at', startOfMonth.toISOString()),
+        const activeIds   = (activeStatusRes.data || []).filter(s => ['confirmada','activa'].includes(s.name)).map(s => s.id)
+        const cancelledId = (activeStatusRes.data || []).find(s => s.name === 'cancelada')?.id
 
-        // 4. Todas las reservas de los últimos 6 meses (para gráfico)
-        supabase.from('reservations')
-          .select('num_guests, status_id, created_at')
-          .gte('created_at', sixMoAgo.toISOString()),
-
-        // 5. Todos los pagos de los últimos 6 meses (para gráfico)
-        supabase.from('payments')
-          .select('amount, paid_at')
-          .gte('paid_at', sixMoAgo.toISOString()),
-      ])
-
-      const activeIds = (activeStatusRes.data || []).map(s => s.id)
-
-      // Personas alojadas ahora
-      const guests = (activeReservationsRes.data || [])
-        .filter(r => activeIds.includes(r.status_id))
-        .reduce((s, r) => s + r.num_guests, 0)
-
-      // Ingresos del mes
-      const revenue = (paymentsMonthRes.data || [])
-        .reduce((s, p) => s + Number(p.amount), 0)
-
-      // Total reservas activas
-      const totalRes = (activeReservationsRes.data || [])
-        .filter(r => activeIds.includes(r.status_id)).length
-
-      // ── Agrupar por mes en JS ──────────────────────────────
-      const now = new Date()
-      const monthData = []
-
-      for (let i = 5; i >= 0; i--) {
-        const d     = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        const year  = d.getFullYear()
-        const month = d.getMonth()
-
-        const resCount = (allReservationsRes.data || []).filter(r => {
-          const rd = new Date(r.created_at)
-          return rd.getFullYear() === year && rd.getMonth() === month
-        }).length
-
-        const monthGuests = (allReservationsRes.data || [])
-          .filter(r => { const rd = new Date(r.created_at); return rd.getFullYear() === year && rd.getMonth() === month })
+        const guests = (activeReservationsRes.data || [])
+          .filter(r => activeIds.includes(r.status_id))
           .reduce((s, r) => s + r.num_guests, 0)
 
-        const monthRevenue = (allPaymentsRes.data || [])
-          .filter(p => { const pd = new Date(p.paid_at); return pd.getFullYear() === year && pd.getMonth() === month })
-          .reduce((s, p) => s + Number(p.amount), 0)
+        const revenue = (allReservationsRes.data || [])
+          .filter(r => { const rd = new Date(r.created_at); return rd >= startOfMonth && r.status_id !== cancelledId })
+          .reduce((s, r) => s + Number(r.total_price || 0), 0)
 
-        monthData.push({ mes: MONTHS[month], reservas: resCount, personas: monthGuests, dinero: monthRevenue })
+        const totalRes = (activeReservationsRes.data || [])
+          .filter(r => activeIds.includes(r.status_id)).length
+
+        const now = new Date()
+        const monthData = []
+        for (let i = 5; i >= 0; i--) {
+          const d     = new Date(now.getFullYear(), now.getMonth() - i, 1)
+          const year  = d.getFullYear()
+          const month = d.getMonth()
+          const monthRes = (allReservationsRes.data || []).filter(r => {
+            const rd = new Date(r.created_at)
+            return rd.getFullYear() === year && rd.getMonth() === month && r.status_id !== cancelledId
+          })
+          monthData.push({
+            mes:      MONTHS[month],
+            reservas: monthRes.length,
+            personas: monthRes.reduce((s, r) => s + r.num_guests, 0),
+            dinero:   monthRes.reduce((s, r) => s + Number(r.total_price || 0), 0),
+          })
+        }
+
+        setStats({ totalRes, guests, revenue })
+        setChartData(monthData)
+      } catch (err) {
+        console.error('[DashboardHome] Error al cargar datos:', err)
+        setLoadError('No se pudieron cargar los datos. Verifica tu conexión y recarga la página.')
+      } finally {
+        setLoading(false)
       }
-
-      setStats({ totalRes, guests, revenue })
-      setChartData(monthData)
-      setLoading(false)
     }
 
     load()
@@ -121,7 +100,7 @@ const DashboardHome = ({ rooms, occupied, available, onNewReservation }) => {
 
   const chartKey   = filter === 'personas' ? 'personas' : 'dinero'
   const chartLabel = filter === 'personas' ? 'Personas alojadas' : 'Ingresos (COP)'
-  const chartColor = filter === 'personas' ? '#2A5C4E' : '#C9A96E'
+  const chartColor = '#F7834F'
 
   return (
     <>
@@ -140,6 +119,12 @@ const DashboardHome = ({ rooms, occupied, available, onNewReservation }) => {
       {loading ? (
         <div className="admin-loading">
           <span className="material-icons spinning">autorenew</span>Cargando...
+        </div>
+      ) : loadError ? (
+        <div className="dash-error">
+          <span className="material-icons">cloud_off</span>
+          <p>{loadError}</p>
+          <button onClick={() => window.location.reload()}>Reintentar</button>
         </div>
       ) : (
         <>
@@ -207,9 +192,9 @@ const DashboardHome = ({ rooms, occupied, available, onNewReservation }) => {
                 <Tooltip content={<CustomTooltip filter={filter} />} />
                 <Legend />
                 <Line type="monotone" dataKey="reservas" name="Reservas"
-                  stroke="#1A3C34" strokeWidth={2.5} dot={{ r: 4, fill: '#1A3C34' }} activeDot={{ r: 6 }} />
+                  stroke="#6366F1" strokeWidth={2.5} dot={{ r: 4, fill: '#6366F1' }} activeDot={{ r: 6 }} />
                 <Line type="monotone" dataKey={chartKey} name={chartLabel}
-                  stroke={chartColor} strokeWidth={2.5} dot={{ r: 4, fill: chartColor }} activeDot={{ r: 6 }} />
+                  stroke="#10B981" strokeWidth={2.5} dot={{ r: 4, fill: '#10B981' }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

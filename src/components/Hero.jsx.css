@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   background-color: var(--color-forest);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .hero-background {
@@ -81,7 +81,7 @@
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
-    overflow: hidden;
+    overflow: visible;
   }
 
   /* Overlay uniforme en móvil, sin gradiente */

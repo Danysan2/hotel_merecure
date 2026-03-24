@@ -8,11 +8,11 @@ const Footer = () => {
         <div className="footer-top">
           <div className="footer-brand">
             <div className="navbar-logo">
-              <span className="logo-text">MERECURE</span>
-              <span className="logo-subtext">HOTEL</span>
+              <span className="logo-text">HOTEL</span>
+              <span className="logo-subtext">MERECURE</span>
             </div>
             <p className="footer-about">
-              Una mezcla de lujo, confort y servicio de clase mundial enclavada en el radiante paisaje botánico de Cartagena.
+              Tu lugar para descansar en Cravo Norte. Atención cercana, comodidad y tranquilidad en el corazón de los llanos.
             </p>
           </div>
           
@@ -32,10 +32,10 @@ const Footer = () => {
               <h4>Servicios</h4>
               <ul>
                 <li><a href="#">Habitaciones</a></li>
-                <li><a href="#">Amenidades</a></li>
-                <li><a href="#">Spa & Bienestar</a></li>
-                <li><a href="#">Experiencias Gastronómicas</a></li>
-                <li><a href="#">Espacios para Eventos</a></li>
+                <li><a href="#">Wi-Fi Gratis</a></li>
+                <li><a href="#">Aire Acondicionado</a></li>
+                <li><a href="#">Restaurante</a></li>
+                <li><a href="#">Lavandería</a></li>
               </ul>
             </div>
             
@@ -44,15 +44,15 @@ const Footer = () => {
               <ul className="contact-list">
                 <li>
                   <span className="material-icons">location_on</span>
-                  <span>123 Botanical Ave. Cartagena, CO</span>
+                  <span>Calle 2 #2-32, Cravo Norte, Arauca</span>
                 </li>
                 <li>
                   <span className="material-icons">phone</span>
-                  <span>+57 1 800 234 567</span>
+                  <span>+57 317 698 0346</span>
                 </li>
                 <li>
                   <span className="material-icons">email</span>
-                  <span>welcome@merecurehotel.co</span>
+                  <span>hotelmerecurecravonorte@gmail.com</span>
                 </li>
               </ul>
             </div>
@@ -60,7 +60,7 @@ const Footer = () => {
         </div>
         
         <div className="footer-bottom">
-          <p>© 2024 Hotel Merecure. Todos los derechos reservados.</p>
+          <p>© 2026 Hotel Merecure. Todos los derechos reservados.</p>
           <div className="footer-legal">
             <a href="#">Política de Privacidad</a>
             <a href="#">Términos de Servicio</a>

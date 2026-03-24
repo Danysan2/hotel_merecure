@@ -30,7 +30,7 @@ const BookingBar = () => {
   useEffect(() => {
     supabase
       .from('room_types')
-      .select('id, name')
+      .select('id, name, max_occupancy')
       .then(({ data }) => {
         if (data) setRoomTypes(data);
       });
@@ -68,7 +68,11 @@ const BookingBar = () => {
           <span className="booking-label">Tipo de Habitación</span>
           <div className="booking-input-wrap">
             <span className="material-icons booking-icon">king_bed</span>
-            <select value={roomType} onChange={(e) => setRoomType(e.target.value)}>
+            <select value={roomType} onChange={(e) => {
+              setRoomType(e.target.value);
+              const sel = roomTypes.find((r) => String(r.id) === e.target.value);
+              if (sel && guests > sel.max_occupancy) setGuests(sel.max_occupancy);
+            }}>
               <option value="">Seleccionar...</option>
               {roomTypes.map((rt) => (
                 <option key={rt.id} value={String(rt.id)}>{rt.name}</option>
@@ -132,7 +136,11 @@ const BookingBar = () => {
             <div className="guests-control">
               <button onClick={() => setGuests((g) => Math.max(1, g - 1))}>−</button>
               <span>{guests}</span>
-              <button onClick={() => setGuests((g) => Math.min(10, g + 1))}>+</button>
+              <button onClick={() => {
+                const sel = roomTypes.find((r) => String(r.id) === roomType);
+                const max = sel?.max_occupancy || 10;
+                setGuests((g) => Math.min(max, g + 1));
+              }}>+</button>
             </div>
           </div>
         </div>

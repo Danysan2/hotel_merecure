@@ -19,6 +19,7 @@ export default function ReservarPage() {
   const [loading,   setLoading]   = useState(false);
   const [showCal,   setShowCal]   = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Datos de estadia
   const [roomTypeId,   setRoomTypeId]   = useState(state?.roomTypeId   ? String(state.roomTypeId) : '');
@@ -38,7 +39,7 @@ export default function ReservarPage() {
   const [email,     setEmail]     = useState('');
 
   useEffect(() => {
-    supabase.from('room_types').select('id, name').then(({ data }) => setRoomTypes(data || []));
+    supabase.from('room_types').select('id, name, price_single, price_double, price_fixed, max_occupancy').then(({ data }) => setRoomTypes(data || []));
     supabase.from('document_types').select('id, code, name').then(({ data }) => setDocTypes(data || []));
   }, []);
 
@@ -46,32 +47,54 @@ export default function ReservarPage() {
     setRoomTypeId(id);
     const rt = roomTypes.find(r => String(r.id) === id);
     setRoomTypeName(rt?.name || '');
+    if (rt && guests > rt.max_occupancy) setGuests(rt.max_occupancy);
   };
+
+  const selectedRT = roomTypes.find(r => String(r.id) === roomTypeId);
+  const maxGuests  = selectedRT?.max_occupancy || 10;
 
   const nights = range.from && range.to
     ? Math.max(1, Math.round((range.to - range.from) / 86400000))
     : 0;
 
+  const pricePerNight = selectedRT
+    ? (selectedRT.price_fixed ? selectedRT.price_fixed : (guests >= 2 ? selectedRT.price_double : selectedRT.price_single))
+    : 0;
+  const totalPrice = nights * (pricePerNight || 0);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError('');
     setLoading(true);
 
-    const checkIn  = toISO(range.from);
-    const checkOut = toISO(range.to);
+    try {
+      const checkIn  = toISO(range.from);
+      const checkOut = toISO(range.to);
 
-    await supabase.from('booking_requests').insert({
-      room_type_id:  roomTypeId ? Number(roomTypeId) : null,
-      check_in:      checkIn  || null,
-      check_out:     checkOut || null,
-      num_guests:    guests,
-      contact_name:  `${firstName} ${lastName}`.trim() || null,
-      contact_phone: phone  || null,
-      contact_email: email  || null,
-      whatsapp_sent: false,
-    });
+      const { error: insertError } = await supabase.from('booking_requests').insert({
+        room_type_id:  roomTypeId ? Number(roomTypeId) : null,
+        check_in:      checkIn  || null,
+        check_out:     checkOut || null,
+        num_guests:    guests,
+        contact_name:  `${firstName} ${lastName}`.trim() || null,
+        contact_phone: phone  || null,
+        contact_email: email  || null,
+        whatsapp_sent: false,
+      });
 
-    setLoading(false);
-    setShowModal(true);
+      if (insertError) {
+        console.error('[ReservarPage] Error al guardar solicitud:', insertError);
+        setSubmitError('No pudimos registrar tu solicitud. Por favor intenta de nuevo o contáctanos directamente al +57 317 698 0346.');
+        return;
+      }
+
+      setShowModal(true);
+    } catch (err) {
+      console.error('[ReservarPage] Error inesperado:', err);
+      setSubmitError('Sin conexión. Verifica tu red e intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -112,8 +135,9 @@ export default function ReservarPage() {
                 <div className="guests-row">
                   <button type="button" className="g-btn" onClick={() => setGuests(g => Math.max(1, g - 1))}>−</button>
                   <span className="g-val">{guests}</span>
-                  <button type="button" className="g-btn" onClick={() => setGuests(g => Math.min(10, g + 1))}>+</button>
+                  <button type="button" className="g-btn" onClick={() => setGuests(g => Math.min(maxGuests, g + 1))}>+</button>
                 </div>
+                {roomTypeId && <span className="max-guests-hint">Máx. {maxGuests} personas</span>}
               </div>
             </div>
 
@@ -211,6 +235,25 @@ export default function ReservarPage() {
                 <span className="material-icons">group</span>
                 <span>{guests} persona{guests !== 1 ? 's' : ''} · {nights} noche{nights !== 1 ? 's' : ''}</span>
               </div>
+              {totalPrice > 0 && (
+                <div className="rs-row rs-total">
+                  <span className="material-icons">payments</span>
+                  <span><strong>Total estimado: ${totalPrice.toLocaleString('es-CO')}</strong></span>
+                </div>
+              )}
+              {pricePerNight > 0 && (
+                <div className="rs-row rs-detail">
+                  <span className="material-icons">info</span>
+                  <span>${Number(pricePerNight).toLocaleString('es-CO')} / noche × {nights} noche{nights !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {submitError && (
+            <div className="reservar-error">
+              <span className="material-icons">error_outline</span>
+              <span>{submitError}</span>
             </div>
           )}
 

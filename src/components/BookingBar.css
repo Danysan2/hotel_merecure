@@ -21,7 +21,7 @@
 
 /* ── Fields ── */
 .booking-field {
-  flex: 1;
+  flex: 1.6;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
