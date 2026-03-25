@@ -23,7 +23,6 @@ const Navbar = () => {
 
           {/* Logo */}
           <div className="navbar-logo">
-            <img src="/logo_final.png" alt="Hotel Merecure" className="navbar-logo-img" />
             <div className="navbar-logo-text">
               <span className="logo-text">HOTEL</span>
               <span className="logo-subtext">MERECURE</span>
