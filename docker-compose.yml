@@ -6,7 +6,7 @@ services:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_KEY: ${VITE_SUPABASE_KEY}
     ports:
-      - "3000:80"
+      - "3001:80"
     restart: unless-stopped
 networks:
   dokploy-network:
