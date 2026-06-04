@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { es } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
-import { supabase } from '../lib/supabase';
+import { publicApi } from '../lib/api';
 import './ReservarPage.css';
+
+const HOTEL_WHATSAPP_NUMBER = '573176980346';
 
 // ── Validación de campos ─────────────────────────────────────
 const validate = ({ firstName, lastName, docNumber, phone, email }) => {
@@ -20,6 +22,55 @@ const validate = ({ firstName, lastName, docNumber, phone, email }) => {
 const toISO  = (d) => d ? (typeof d === 'string' ? d : d.toISOString().split('T')[0]) : '';
 const fromISO = (s) => s ? new Date(s + 'T00:00:00') : undefined;
 const fmtDate = (s) => s ? new Date(s + 'T00:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const money = (value) => Number(value || 0).toLocaleString('es-CO');
+
+const buildWhatsAppMessage = ({
+  firstName,
+  lastName,
+  docTypeName,
+  docNumber,
+  phone,
+  email,
+  roomTypeName,
+  checkIn,
+  checkOut,
+  guests,
+  nights,
+  pricePerNight,
+  totalPrice,
+}) => {
+  const lines = [
+    'Hola, quiero consultar disponibilidad para una reserva en Hotel Merecure.',
+    '',
+    'Datos del huésped:',
+    `Nombre: ${firstName.trim()} ${lastName.trim()}`,
+    `Documento: ${docTypeName || 'No especificado'} ${docNumber.trim()}`,
+    `Celular: ${phone.replace(/[\s\-]/g, '')}`,
+  ];
+
+  if (email.trim()) lines.push(`Correo: ${email.trim()}`);
+
+  lines.push(
+    '',
+    'Detalle de la estadía:',
+    `Habitación: ${roomTypeName}`,
+    `Llegada: ${fmtDate(checkIn)} (${checkIn})`,
+    `Salida: ${fmtDate(checkOut)} (${checkOut})`,
+    `Personas: ${guests}`,
+    `Noches: ${nights}`,
+  );
+
+  if (totalPrice > 0) {
+    lines.push(
+      `Valor estimado: $${money(totalPrice)}`,
+      `Tarifa usada: $${money(pricePerNight)} por noche`,
+    );
+  }
+
+  lines.push('', 'Quedo atento(a) para confirmar si hay disponibilidad.');
+
+  return lines.join('\n');
+};
 
 export default function ReservarPage() {
   const { state } = useLocation();
@@ -27,14 +78,9 @@ export default function ReservarPage() {
 
   const [roomTypes, setRoomTypes] = useState([]);
   const [docTypes,  setDocTypes]  = useState([]);
-  const [loading,     setLoading]     = useState(false);
   const [showCal,     setShowCal]     = useState(false);
-  const [showModal,   setShowModal]   = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [loadError,   setLoadError]   = useState('');
-  // Idempotency: clave única por sesión del formulario, evita doble envío
-  const idempotencyKey = useRef(crypto.randomUUID());
-  const submittingRef  = useRef(false);
 
   // Datos de estadia
   const [roomTypeId,   setRoomTypeId]   = useState(state?.roomTypeId   ? String(state.roomTypeId) : '');
@@ -56,14 +102,12 @@ export default function ReservarPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [rtRes, dtRes] = await Promise.all([
-          supabase.from('room_types').select('id, name, price_single, price_double, price_fixed, max_occupancy'),
-          supabase.from('document_types').select('id, code, name'),
+        const [roomTypeRows, documentTypeRows] = await Promise.all([
+          publicApi.getRoomTypes(),
+          publicApi.getDocumentTypes(),
         ]);
-        if (rtRes.error) throw new Error('No se pudieron cargar los tipos de habitación.');
-        if (dtRes.error) throw new Error('No se pudieron cargar los tipos de documento.');
-        setRoomTypes(rtRes.data || []);
-        setDocTypes(dtRes.data || []);
+        setRoomTypes(roomTypeRows || []);
+        setDocTypes(documentTypeRows || []);
       } catch (err) {
         console.error('[ReservarPage] Error al cargar datos:', err);
         setLoadError('Error al cargar el formulario. Recarga la página o contáctanos al +57 317 698 0346.');
@@ -91,55 +135,40 @@ export default function ReservarPage() {
     : 0;
   const totalPrice = nights * (pricePerNight || 0);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    // Guard: evita doble envío aunque el botón no esté deshabilitado aún
-    if (submittingRef.current) return;
 
-    // Validación de campos
+    if (!roomTypeId || !range.from || !range.to) {
+      setSubmitError('Selecciona el tipo de habitación y las fechas de llegada y salida.');
+      return;
+    }
+
     const validationError = validate({ firstName, lastName, docNumber, phone, email });
     if (validationError) { setSubmitError(validationError); return; }
 
-    submittingRef.current = true;
     setSubmitError('');
-    setLoading(true);
+    const checkIn  = toISO(range.from);
+    const checkOut = toISO(range.to);
+    const selectedDocType = docTypes.find(d => String(d.id) === String(docTypeId));
+    const docTypeName = selectedDocType ? `${selectedDocType.code} - ${selectedDocType.name}` : '';
+    const message = buildWhatsAppMessage({
+      firstName,
+      lastName,
+      docTypeName,
+      docNumber,
+      phone,
+      email,
+      roomTypeName,
+      checkIn,
+      checkOut,
+      guests,
+      nights,
+      pricePerNight,
+      totalPrice,
+    });
+    const whatsappUrl = `https://wa.me/${HOTEL_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
-    try {
-      const checkIn  = toISO(range.from);
-      const checkOut = toISO(range.to);
-
-      const { error: insertError } = await supabase.from('booking_requests').insert({
-        room_type_id:      roomTypeId ? Number(roomTypeId) : null,
-        check_in:          checkIn  || null,
-        check_out:         checkOut || null,
-        num_guests:        guests,
-        contact_name:      `${firstName.trim()} ${lastName.trim()}`.trim() || null,
-        contact_phone:     phone.replace(/[\s\-]/g, '') || null,
-        contact_email:     email.trim() || null,
-        whatsapp_sent:     false,
-        idempotency_key:   idempotencyKey.current,
-      });
-
-      if (insertError) {
-        // Unique constraint = envío duplicado capturado por la BD
-        if (insertError.code === '23505') {
-          setShowModal(true);
-          return;
-        }
-        console.error('[ReservarPage] Error al guardar solicitud:', insertError);
-        setSubmitError('No pudimos registrar tu solicitud. Por favor intenta de nuevo o contáctanos directamente al +57 317 698 0346.');
-        submittingRef.current = false;
-        return;
-      }
-
-      setShowModal(true);
-    } catch (err) {
-      console.error('[ReservarPage] Error inesperado:', err);
-      setSubmitError('Sin conexión. Verifica tu red e intenta de nuevo.');
-      submittingRef.current = false;
-    } finally {
-      setLoading(false);
-    }
+    window.location.href = whatsappUrl;
   };
 
   return (
@@ -152,7 +181,7 @@ export default function ReservarPage() {
         <div className="reservar-hero-text">
           <span className="reservar-label">Reservaciones</span>
           <h1 className="reservar-title">Completa tu reserva</h1>
-          <p className="reservar-sub">Llena tus datos y un asesor te contactará para confirmar</p>
+          <p className="reservar-sub">Llena tus datos y envía tu solicitud por WhatsApp para confirmar disponibilidad</p>
         </div>
       </div>
 
@@ -308,35 +337,11 @@ export default function ReservarPage() {
             </div>
           )}
 
-          <button type="submit" className="reservar-submit" disabled={loading}>
-            {loading ? 'Enviando...' : (
-              <><span className="material-icons">check_circle</span> Reservar</>
-            )}
+          <button type="submit" className="reservar-submit">
+            <span className="material-icons">chat</span> Consultar por WhatsApp
           </button>
         </form>
       </div>
-
-      {/* ── Modal de confirmación ── */}
-      {showModal && (
-        <div className="res-modal-overlay">
-          <div className="res-modal-card">
-            <div className="res-modal-icon">
-              <span className="material-icons">celebration</span>
-            </div>
-            <h2>¡Solicitud recibida!</h2>
-            <p>
-              Un asesor del Hotel Merecure se comunicará contigo próximamente al número <strong>{phone}</strong> para confirmar tu reserva y coordinar el pago del adelanto.
-            </p>
-            <div className="res-modal-info">
-              <span className="material-icons">info</span>
-              <span>Revisa también tu correo electrónico si lo proporcionaste.</span>
-            </div>
-            <button className="res-modal-btn" onClick={() => navigate('/')}>
-              Volver al inicio
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

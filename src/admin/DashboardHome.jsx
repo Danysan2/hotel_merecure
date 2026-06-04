@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { adminApi } from '../lib/api'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 import './DashboardHome.css'
-
-const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
 const CustomTooltip = ({ active, payload, label, filter }) => {
   if (!active || !payload?.length) return null
@@ -39,54 +37,9 @@ const DashboardHome = ({ rooms, occupied, available, onNewReservation }) => {
       setLoadError('')
 
       try {
-        const today        = new Date().toISOString().split('T')[0]
-        const sixMoAgo     = new Date(); sixMoAgo.setMonth(sixMoAgo.getMonth() - 5); sixMoAgo.setDate(1)
-        const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0)
-
-        const [activeStatusRes, activeReservationsRes, allReservationsRes] = await Promise.all([
-          supabase.from('reservation_statuses').select('id, name'),
-          supabase.from('reservations').select('num_guests, status_id').lte('check_in', today).gte('check_out', today),
-          supabase.from('reservations').select('num_guests, status_id, created_at, total_price, check_in').gte('created_at', sixMoAgo.toISOString()),
-        ])
-
-        if (activeStatusRes.error)      throw new Error('Error al cargar estados: '    + activeStatusRes.error.message)
-        if (activeReservationsRes.error) throw new Error('Error al cargar reservas: '  + activeReservationsRes.error.message)
-        if (allReservationsRes.error)   throw new Error('Error al cargar historial: '  + allReservationsRes.error.message)
-
-        const activeIds   = (activeStatusRes.data || []).filter(s => ['confirmada','activa'].includes(s.name)).map(s => s.id)
-        const cancelledId = (activeStatusRes.data || []).find(s => s.name === 'cancelada')?.id
-
-        const guests = (activeReservationsRes.data || [])
-          .filter(r => activeIds.includes(r.status_id))
-          .reduce((s, r) => s + r.num_guests, 0)
-
-        const revenue = (allReservationsRes.data || [])
-          .filter(r => { const rd = new Date(r.created_at); return rd >= startOfMonth && r.status_id !== cancelledId })
-          .reduce((s, r) => s + Number(r.total_price || 0), 0)
-
-        const totalRes = (activeReservationsRes.data || [])
-          .filter(r => activeIds.includes(r.status_id)).length
-
-        const now = new Date()
-        const monthData = []
-        for (let i = 5; i >= 0; i--) {
-          const d     = new Date(now.getFullYear(), now.getMonth() - i, 1)
-          const year  = d.getFullYear()
-          const month = d.getMonth()
-          const monthRes = (allReservationsRes.data || []).filter(r => {
-            const rd = new Date(r.created_at)
-            return rd.getFullYear() === year && rd.getMonth() === month && r.status_id !== cancelledId
-          })
-          monthData.push({
-            mes:      MONTHS[month],
-            reservas: monthRes.length,
-            personas: monthRes.reduce((s, r) => s + r.num_guests, 0),
-            dinero:   monthRes.reduce((s, r) => s + Number(r.total_price || 0), 0),
-          })
-        }
-
-        setStats({ totalRes, guests, revenue })
-        setChartData(monthData)
+        const data = await adminApi.getDashboard()
+        setStats(data.stats)
+        setChartData(data.chartData)
       } catch (err) {
         console.error('[DashboardHome] Error al cargar datos:', err)
         setLoadError('No se pudieron cargar los datos. Verifica tu conexión y recarga la página.')

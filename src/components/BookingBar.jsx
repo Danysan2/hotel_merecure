@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { es } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
 import './BookingBar.css';
-import { supabase } from '../lib/supabase';
+import { publicApi } from '../lib/api';
 
 const formatDate = (date) => {
   if (!date) return null;
@@ -26,16 +26,17 @@ const BookingBar = () => {
   const [loading, setLoading]       = useState(false);
   const calendarRef = useRef(null);
 
-  // Cargar tipos de habitación desde Supabase
+  // Cargar tipos de habitación desde la API
   useEffect(() => {
     let mounted = true;
-    supabase
-      .from('room_types')
-      .select('id, name, max_occupancy')
-      .then(({ data, error }) => {
+    publicApi
+      .getRoomTypes()
+      .then((data) => {
         if (!mounted) return;
-        if (error) { console.error('[BookingBar] room_types:', error.message); return; }
         if (data) setRoomTypes(data);
+      })
+      .catch((error) => {
+        if (mounted) console.error('[BookingBar] room_types:', error.message);
       });
     return () => { mounted = false; };
   }, []);

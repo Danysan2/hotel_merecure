@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { adminApi } from '../lib/api'
 import './NewReservationModal.css'
 
 const EditReservationModal = ({ room, onClose, onSuccess }) => {
@@ -17,27 +17,17 @@ const EditReservationModal = ({ room, onClose, onSuccess }) => {
 
     setLoading(true)
 
-    const { data: avail } = await supabase.rpc('is_room_available', {
-      p_room_id:            room.id,
-      p_check_in:           checkIn,
-      p_check_out:          checkOut,
-      p_exclude_reservation: room.reservation_id,
-    })
-
-    if (!avail) {
-      setError('La habitación ya tiene otra reserva en esas fechas.')
+    try {
+      await adminApi.updateReservation(room.reservation_id, {
+        check_in: checkIn,
+        check_out: checkOut,
+      })
+      onSuccess()
+    } catch (err) {
+      setError(err.message)
+    } finally {
       setLoading(false)
-      return
     }
-
-    const { error: err } = await supabase
-      .from('reservations')
-      .update({ check_in: checkIn, check_out: checkOut })
-      .eq('id', room.reservation_id)
-
-    setLoading(false)
-    if (err) { setError('Error al actualizar: ' + err.message); return }
-    onSuccess()
   }
 
   return (

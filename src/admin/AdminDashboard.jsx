@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { adminApi } from '../lib/api'
 import { getSession, clearSession } from './auth'
 import NewReservationModal from './NewReservationModal.jsx'
 import EditReservationModal from './EditReservationModal.jsx'
@@ -10,24 +10,6 @@ import './AdminDashboard.css'
 const fmt = (d) => d
   ? new Date(d + 'T00:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
   : '—'
-
-const getDateRange = (filter) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  if (filter === 'hoy') {
-    const end = new Date(today); end.setHours(23, 59, 59, 999)
-    return { start: today.toISOString(), end: end.toISOString() }
-  }
-  if (filter === 'semana') {
-    const end = new Date(today); end.setDate(today.getDate() + 6); end.setHours(23, 59, 59, 999)
-    return { start: today.toISOString(), end: end.toISOString() }
-  }
-  if (filter === 'mes') {
-    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
-    return { start: today.toISOString(), end: end.toISOString() }
-  }
-  return { start: today.toISOString(), end: null }
-}
 
 const AdminDashboard = () => {
   const navigate = useNavigate()
@@ -57,9 +39,7 @@ const AdminDashboard = () => {
   const loadRooms = useCallback(async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase.from('room_status').select('*')
-      if (error) throw new Error(error.message)
-      setRooms(data || [])
+      setRooms(await adminApi.getRooms())
     } catch (err) {
       console.error('[AdminDashboard] loadRooms:', err)
       showToast('Error al cargar las habitaciones. Intenta recargar.')
@@ -71,38 +51,11 @@ const AdminDashboard = () => {
   const loadReservations = useCallback(async (f, p = 0) => {
     setLoading(true)
     try {
-      const { start, end } = getDateRange(f)
-      const { data: statuses, error: stErr } = await supabase
-        .from('reservation_statuses')
-        .select('id')
-        .in('name', ['confirmada', 'activa'])
-      if (stErr) throw new Error(stErr.message)
-      const ids = (statuses || []).map(s => s.id)
-
-      let query = supabase
-        .from('reservations')
-        .select(`
-          id, check_in, check_out, num_guests, source, notes,
-          guests(first_name, last_name, phone, email),
-          rooms(room_number, floor, room_types(name)),
-          reservation_statuses(name)
-        `)
-        .in('status_id', ids)
-        .gte('check_out', start.split('T')[0])
-
-      if (end) query = query.lte('check_in', end.split('T')[0])
-
-      const from = p * PAGE_SIZE
-      const { data, error: qErr } = await query
-        .order('check_in', { ascending: true })
-        .range(from, from + PAGE_SIZE)
-
-      if (qErr) throw new Error(qErr.message)
-
-      const rows = data || []
-      const moreExist = rows.length === PAGE_SIZE + 1
-      // Un solo setState: recortamos el +1 explorador en el mismo update
-      const displayRows = moreExist ? rows.slice(0, -1) : rows
+      const { data: displayRows, hasMore: moreExist } = await adminApi.getReservations({
+        filter: f,
+        page: p,
+        pageSize: PAGE_SIZE,
+      })
       setReservations(prev => p === 0 ? displayRows : [...prev, ...displayRows])
       setHasMore(moreExist)
       setPage(p)
@@ -129,19 +82,8 @@ const AdminDashboard = () => {
     setConfirmDialog(null)
     setDeletingId(reservationId)
     try {
-      const { data: st, error: stErr } = await supabase
-        .from('reservation_statuses').select('id').eq('name', 'cancelada').single()
-      if (stErr || !st) {
-        showToast('No se encontró el estado "cancelada". Contacta al administrador.')
-        return
-      }
-      const { error: upErr } = await supabase
-        .from('reservations').update({ status_id: st.id }).eq('id', reservationId)
-      if (upErr) {
-        showToast(`Error al cancelar: ${upErr.message}`)
-      } else {
-        showToast('Reserva cancelada correctamente.', 'success')
-      }
+      await adminApi.cancelReservation(reservationId)
+      showToast('Reserva cancelada correctamente.', 'success')
     } catch (e) {
       showToast(`Error inesperado: ${e.message}`)
     } finally {
@@ -403,7 +345,6 @@ const AdminDashboard = () => {
         <NewReservationModal
           onClose={() => { setShowNew(false); setPreselectedRoom(null) }}
           onSuccess={() => { setShowNew(false); setPreselectedRoom(null); filter === 'hoy' ? loadRooms() : loadReservations(filter) }}
-          staffId={user.id}
           preselectedRoom={preselectedRoom}
         />
       )}

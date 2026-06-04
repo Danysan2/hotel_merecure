@@ -1,47 +1,31 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { adminApi } from '../lib/api'
 import './NewReservationModal.css'
 
 const EMPTY_GUEST = { first_name: '', last_name: '', document_type_id: '', document_number: '', phone: '', email: '' }
 const EMPTY_RES   = { room_id: '', check_in: '', check_out: '', num_guests: 1, notes: '' }
 
-const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) => {
+const NewReservationModal = ({ onClose, onSuccess, preselectedRoom }) => {
   const [step, setStep]             = useState(1)
   const [guest, setGuest]           = useState(EMPTY_GUEST)
   const [res, setRes]               = useState(() => preselectedRoom ? { ...EMPTY_RES, room_id: String(preselectedRoom.id) } : EMPTY_RES)
   const [docTypes, setDocTypes]     = useState([])
   const [rooms, setRooms]           = useState([])
-  const [statusId, setStatusId]     = useState(null)
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
 
   const [roomTypes, setRoomTypes] = useState([])
 
   useEffect(() => {
-    supabase.from('document_types').select('id, code, name')
-      .then(({ data, error }) => {
-        if (error) console.error('[Modal] document_types:', error.message)
-        else setDocTypes(data || [])
+    adminApi.getReservationFormData()
+      .then((data) => {
+        setDocTypes(data.documentTypes || [])
+        setRooms(preselectedRoom ? [] : (data.rooms || []))
+        setRoomTypes(data.roomTypes || [])
       })
-
-    if (!preselectedRoom) {
-      supabase.from('room_status').select('id, room_number, floor, room_type, is_occupied')
-        .then(({ data, error }) => {
-          if (error) console.error('[Modal] room_status:', error.message)
-          else setRooms(data || [])
-        })
-    }
-
-    supabase.from('reservation_statuses').select('id, name').eq('name', 'confirmada').single()
-      .then(({ data, error }) => {
-        if (error) console.error('[Modal] reservation_statuses:', error.message)
-        else setStatusId(data?.id)
-      })
-
-    supabase.from('room_types').select('id, name, price_single, price_double, price_fixed, max_occupancy')
-      .then(({ data, error }) => {
-        if (error) console.error('[Modal] room_types:', error.message)
-        else setRoomTypes(data || [])
+      .catch((error) => {
+        console.error('[Modal] form data:', error)
+        setError('No se pudieron cargar los datos del formulario.')
       })
   }, [])
 
@@ -76,51 +60,17 @@ const NewReservationModal = ({ onClose, onSuccess, staffId, preselectedRoom }) =
     setLoading(true)
 
     try {
-      // 1. Buscar o crear huésped
-      const { data: existing } = await supabase
-        .from('guests')
-        .select('id')
-        .eq('document_type_id', guest.document_type_id)
-        .eq('document_number', guest.document_number)
-        .maybeSingle()
-
-      let guestId = existing?.id
-      if (!guestId) {
-        const { data: newGuest, error: gErr } = await supabase
-          .from('guests')
-          .insert({ ...guest, document_type_id: Number(guest.document_type_id) })
-          .select('id')
-          .single()
-        if (gErr) throw new Error('Error al registrar huésped: ' + gErr.message)
-        guestId = newGuest.id
-      }
-
-      // 1b. Verificar que el statusId se haya cargado
-      if (!statusId) throw new Error('No se encontró el estado "confirmada". Recarga el modal e intenta de nuevo.')
-
-      // 2. Verificar disponibilidad
-      const { data: avail } = await supabase.rpc('is_room_available', {
-        p_room_id:   Number(res.room_id),
-        p_check_in:  res.check_in,
-        p_check_out: res.check_out,
+      await adminApi.createReservation({
+        guest,
+        reservation: {
+          room_id: Number(res.room_id),
+          check_in: res.check_in,
+          check_out: res.check_out,
+          num_guests: Number(res.num_guests),
+          source: 'presencial',
+          notes: res.notes || null,
+        },
       })
-      if (!avail) throw new Error('La habitación ya tiene una reserva en esas fechas.')
-
-      // 3. Crear reserva
-      const { error: rErr } = await supabase.from('reservations').insert({
-        guest_id:    guestId,
-        room_id:     Number(res.room_id),
-        status_id:   statusId,
-        created_by:  staffId,
-        check_in:    res.check_in,
-        check_out:   res.check_out,
-        num_guests:  Number(res.num_guests),
-        total_price: calcPrice(),
-        source:      'presencial',
-        notes:       res.notes || null,
-      })
-      if (rErr) throw new Error('Error al crear reserva: ' + rErr.message)
-
       onSuccess()
     } catch (err) {
       setError(err.message)

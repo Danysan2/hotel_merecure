@@ -2,12 +2,15 @@ services:
   web:
     build:
       context: .
-      args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_KEY: ${VITE_SUPABASE_KEY}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_TIMEZONE: ${APP_TIMEZONE:-America/Bogota}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?ADMIN_SESSION_SECRET is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DIRECT_URL: ${DIRECT_URL:-}
+      SHADOW_DATABASE_URL: ${SHADOW_DATABASE_URL:-}
+      N8N_RESERVATION_WEBHOOK: ${N8N_RESERVATION_WEBHOOK:-}
     ports:
-      - "3001:80"
+      - "3001:3000"
     restart: unless-stopped
-networks:
-  dokploy-network:
-    external: true

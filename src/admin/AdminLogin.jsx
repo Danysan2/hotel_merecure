@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { adminApi } from '../lib/api'
 import { saveSession } from './auth'
 import './AdminLogin.css'
 
@@ -19,29 +19,12 @@ const AdminLogin = () => {
     setLoading(true)
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('login_staff', {
-        p_username: username,
-        p_password: password,
-      })
-
-      if (rpcError) {
-        // Error del servidor (función SQL, conexión, etc.)
-        console.error('[AdminLogin] RPC error:', rpcError)
-        setError('Error al conectar con el servidor. Intenta de nuevo.')
-        return
-      }
-
-      if (!data || data.length === 0) {
-        setError('Usuario o contraseña incorrectos.')
-        return
-      }
-
-      saveSession(data[0])
+      const data = await adminApi.login({ username, password })
+      saveSession({ ...data.user, token: data.token })
       navigate('/admin/dashboard')
     } catch (err) {
-      // Error de red o fallo inesperado
       console.error('[AdminLogin] Error inesperado:', err)
-      setError('Sin conexión. Verifica tu red e intenta de nuevo.')
+      setError(err.status === 401 ? 'Usuario o contraseña incorrectos.' : 'Sin conexión. Verifica tu red e intenta de nuevo.')
     } finally {
       setLoading(false)
     }
