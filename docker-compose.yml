@@ -12,5 +12,5 @@ services:
       SHADOW_DATABASE_URL: ${SHADOW_DATABASE_URL:-}
       N8N_RESERVATION_WEBHOOK: ${N8N_RESERVATION_WEBHOOK:-}
     ports:
-      - "3001:3000"
+      - "3014:3000"
     restart: unless-stopped
