@@ -14,7 +14,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3014
 
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
@@ -23,6 +23,6 @@ COPY --from=builder /app/server ./server
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.js ./prisma.config.js
 
-EXPOSE 3000
+EXPOSE 3014
 
 CMD ["sh", "-c", "npm run db:migrate && npm run db:seed && node server/index.js"]

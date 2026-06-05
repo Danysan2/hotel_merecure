@@ -4,7 +4,7 @@ services:
       context: .
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3014
       APP_TIMEZONE: ${APP_TIMEZONE:-America/Bogota}
       ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?ADMIN_SESSION_SECRET is required}
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
@@ -12,5 +12,5 @@ services:
       SHADOW_DATABASE_URL: ${SHADOW_DATABASE_URL:-}
       N8N_RESERVATION_WEBHOOK: ${N8N_RESERVATION_WEBHOOK:-}
     ports:
-      - "3014:3000"
+      - "3014:3014"
     restart: unless-stopped
