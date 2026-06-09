@@ -11,7 +11,7 @@
     "start": "node server/index.js",
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "prisma db execute --file prisma/seed.sql --schema prisma/schema.prisma",
+    "db:seed": "prisma db execute --file prisma/seed.sql",
     "db:studio": "prisma studio"
   },
   "devDependencies": {
