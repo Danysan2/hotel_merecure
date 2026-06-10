@@ -179,9 +179,9 @@ export default function ReservarPage() {
           <span className="material-icons">arrow_back</span> Volver
         </button>
         <div className="reservar-hero-text">
-          <span className="reservar-label">Reservaciones</span>
-          <h1 className="reservar-title">Completa tu reserva</h1>
-          <p className="reservar-sub">Llena tus datos y envía tu solicitud por WhatsApp para confirmar disponibilidad</p>
+          <span className="reservar-label">Solicitud de reserva</span>
+          <h1 className="reservar-title">Consulta disponibilidad</h1>
+          <p className="reservar-sub">Envía tus datos por WhatsApp para que recepción confirme disponibilidad</p>
         </div>
       </div>
 
@@ -338,7 +338,7 @@ export default function ReservarPage() {
           )}
 
           <button type="submit" className="reservar-submit">
-            <span className="material-icons">chat</span> Consultar por WhatsApp
+            <span className="material-icons">chat</span> Enviar solicitud por WhatsApp
           </button>
         </form>
       </div>
